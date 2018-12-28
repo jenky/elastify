@@ -1,7 +1,5 @@
 <?php
 
-use Cviebrock\LaravelElasticsearch\Manager;
-
 if (! function_exists('elasticsearch')) {
     /**
      * Get a elasticsearch client instance.
@@ -11,6 +9,6 @@ if (! function_exists('elasticsearch')) {
      */
     function elasticsearch($connection = null)
     {
-        return app(Manager::class)->connection($connection);
+        return app('elasticsearch')->connection($connection);
     }
 }

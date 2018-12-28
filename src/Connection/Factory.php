@@ -1,14 +1,17 @@
 <?php
 
+namespace Jenky\LaravelElasticsearch\Connection;
+
 use Elasticsearch\Client;
 use Elasticsearch\ClientBuilder;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Ring\Future\CompletedFutureArray;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Arr;
 use Psr\Http\Message\ResponseInterface;
 
-class ConnectionFactory
+class Factory
 {
     /**
      * Map configuration array keys with ES ClientBuilder setters.
@@ -51,7 +54,7 @@ class ConnectionFactory
      * the default client.
      *
      * @param  array $config
-     * @return \Elasticsearch\Client|mixed
+     * @return \Elasticsearch\Client
      */
     public function make(array $config)
     {
@@ -64,7 +67,7 @@ class ConnectionFactory
      * @param  array $config
      * @return \Elasticsearch\Client
      */
-    protected function buildClient(array $config): Client
+    protected function createClient(array $config): Client
     {
         $clientBuilder = ClientBuilder::create();
 
@@ -98,18 +101,25 @@ class ConnectionFactory
      */
     protected function configureLogging(ClientBuilder $client, array $config)
     {
-        // Configure logging
-        if (Arr::get($config, 'logging.enable')) {
-            $logChannel = Arr::get($config, 'logging.channel');
-            $logPath = Arr::get($config, 'logging.path');
-            $logLevel = Arr::get($config, 'logging.level');
+        $driver = Arr::get($config, 'logging.driver');
+        $config = Arr::get($config, 'logging.drivers.'.$driver);
 
-            if ($logChannel) {
-                $clientBuilder->setLogger($this->container['log']->channel($logChannel));
-            } elseif ($logPath && $logLevel) {
-                $logObject = ClientBuilder::defaultLogger($logPath, $logLevel);
+        if (! $driver || empty($config)) {
+            return;
+        }
+
+        switch ($driver) {
+            case 'default':
+                $logObject = ClientBuilder::defaultLogger(Arr::get($config, 'path'), Arr::get($config, 'level'));
                 $clientBuilder->setLogger($logObject);
-            }
+                break;
+
+            case 'logger':
+                $clientBuilder->setLogger($this->container['log']->channel($Arr::get($config, 'channel')));
+                break;
+
+            default:
+                break;
         }
     }
 

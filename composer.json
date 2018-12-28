@@ -18,7 +18,7 @@
     ],
     "require": {
         "php" : "~7.0",
-        "cviebrock/laravel-elasticsearch": "^3.4",
+        "elasticsearch/elasticsearch": "^6.0",
         "ongr/elasticsearch-dsl": "^6.0"
     },
     "require-dev": {
@@ -43,6 +43,11 @@
     "extra": {
         "branch-alias": {
             "dev-master": "1.0-dev"
+        },
+        "laravel": {
+            "providers": [
+                "Jenky\\LaravelElasticsearch\\ElasticsearchServiceProvider"
+            ]
         }
     },
     "config": {
