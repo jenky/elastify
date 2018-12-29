@@ -5,8 +5,8 @@ namespace Jenky\LaravelElasticsearch;
 use Illuminate\Support\ServiceProvider;
 use Jenky\LaravelElasticsearch\Connection\Factory;
 use Jenky\LaravelElasticsearch\Connection\Manager;
-use Jenky\LaravelElasticsearch\Contracts\ConnectionResolver;
-use Jenky\LaravelElasticsearch\Indices\Index;
+use Jenky\LaravelElasticsearch\Contracts\ClientFactory;
+use Jenky\LaravelElasticsearch\Storage\Index;
 
 class ElasticsearchServiceProvider extends ServiceProvider
 {
@@ -51,6 +51,8 @@ class ElasticsearchServiceProvider extends ServiceProvider
             return new Factory($app);
         });
 
+        $this->app->alias('elasticsearch.factory', ClientFactory::class);
+
         // The elasticsearch manager is used to resolve various connections, since multiple
         // connections might be managed. It also implements the connection resolver
         // interface which may be used by other components requiring connections.
@@ -61,8 +63,6 @@ class ElasticsearchServiceProvider extends ServiceProvider
         $this->app->bind('elasticsearch.connection', function ($app) {
             return $app['elasticsearch']->connection();
         });
-
-        $this->app->alias('elasticsearch', ConnectionResolver::class);
     }
 
     /**

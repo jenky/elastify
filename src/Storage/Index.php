@@ -1,16 +1,16 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Indices;
+namespace Jenky\LaravelElasticsearch\Storage;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\ForwardsCalls;
 use Jenky\LaravelElasticsearch\Connection\HasConnection;
-use Jenky\LaravelElasticsearch\Response;
 use ONGR\ElasticsearchDSL\Search;
 
 abstract class Index
 {
-    use HasConnection;
+    use ForwardsCalls, HasConnection;
 
     /**
      * The connection name for the index.
@@ -24,7 +24,7 @@ abstract class Index
      *
      * @var string
      */
-    protected $name;
+    protected $index;
 
     /**
      * The index aliases.
@@ -62,13 +62,68 @@ abstract class Index
     protected static $exists;
 
     /**
+     * The document class.
+     *
+     * @var \Jenky\Elastichsearch\Storage\Document
+     */
+    protected $document = Document::class;
+
+    // protected $document;
+
+    /**
+     * Get the underlying query builder instance.
+     *
+     * @return \ONGR\ElasticsearchDSL\Search  $query
+     */
+    public function getQuery()
+    {
+        return $this->query;
+    }
+
+    /**
+     * Set the underlying query builder instance.
+     *
+     * @param  \ONGR\ElasticsearchDSL\Search  $query
+     * @return $this
+     */
+    public function setQuery($query)
+    {
+        $this->query = $query;
+
+        return $this;
+    }
+
+    /**
+     * Get the document class.
+     *
+     * @return string
+     */
+    public function getDocument()
+    {
+        return $this->document;
+    }
+
+    /**
+     * Set a index instance for the index being queried.
+     *
+     * @param  string $document
+     * @return $this
+     */
+    public function setDocument(string $document)
+    {
+        $this->document = $document;
+
+        return $this;
+    }
+
+    /**
      * Get the index name.
      *
      * @return string
      */
-    private function name(): string
+    protected function name(): string
     {
-        if (! isset($this->name)) {
+        if (! isset($this->index)) {
             $className = str_replace('Index', '', class_basename($this));
 
             return str_replace(
@@ -78,7 +133,7 @@ abstract class Index
             );
         }
 
-        $return = $this->name;
+        $return = $this->index;
     }
 
     /**
@@ -86,7 +141,7 @@ abstract class Index
      *
      * @return string
      */
-    public function getName(): string
+    public function getIndex(): string
     {
         $name = $this->name();
 
@@ -120,7 +175,7 @@ abstract class Index
      */
     public function searchableAs(): string
     {
-        return $this->name().'*';
+        return ! empty($this->aliases()) ? Arr::first($this->aliases()) : $this->name().'*';
     }
 
     /**
@@ -164,7 +219,8 @@ abstract class Index
     {
         $aliases = (array) $this->aliases;
 
-        if ($this->multipleIndices) {
+        if ($this->multipleIndices
+        && ! in_array($this->name(), $aliases)) {
             $aliases[] = $this->name();
         }
 
@@ -194,7 +250,7 @@ abstract class Index
         if (is_null(static::$exists)) {
             static::$exists = $this->getConnection()
                 ->indices()
-                ->exists(['index' => $this->getName()]);
+                ->exists(['index' => $this->getIndex()]);
         }
 
         return static::$exists;
@@ -210,7 +266,7 @@ abstract class Index
         $this->getConnection()
             ->indices()
             ->create([
-                'index' => $this->getName(),
+                'index' => $this->getIndex(),
                 'body' => array_filter($this->getConfiguration()),
             ]);
     }
@@ -224,7 +280,7 @@ abstract class Index
     {
         $this->getConnection()
             ->indices()
-            ->delete(['index' => $this->getName()]);
+            ->delete(['index' => $this->getIndex()]);
     }
 
     /**
@@ -239,7 +295,7 @@ abstract class Index
 
         if (! empty($data['settings'])) {
             $this->getConnection()->indices()->putSettings([
-                'index' => $this->getName(),
+                'index' => $this->getIndex(),
                 'body' => [
                     'settings' => $data['settings'],
                 ],
@@ -248,25 +304,78 @@ abstract class Index
 
         if (! empty($data['mappings'])) {
             $this->getConnection()->indices()->putMapping([
-                'index' => $this->getName(),
+                'index' => $this->getIndex(),
                 'type' => $this->getType(),
                 'body' => $data['mappings'],
             ]);
         }
     }
 
-    public function search(Search $search): Response
+    /**
+     * Get the number of models to return per page.
+     *
+     * @return int
+     */
+    public function getPerPage()
     {
-        return $this->searchRaw($search->toArray());
+        return $this->perPage;
     }
 
-    public function searchRaw(array $body): Response
+    /**
+     * Set the number of models to return per page.
+     *
+     * @param  int  $perPage
+     * @return $this
+     */
+    public function setPerPage($perPage)
     {
-        return Response::make(
-            $this->getConnection()->search([
-                'index' => $this->searchableAs(),
-                'body' => $body,
-            ])
-        );
+        $this->perPage = $perPage;
+
+        return $this;
+    }
+
+    /**
+     * Get a new query builder for the model's table.
+     *
+     * @return \Jenky\LaravelElasticsearch\Storage\Builder
+     */
+    public function newQuery(): Builder
+    {
+        return (new Builder($this->newBaseQuery()))
+            ->setIndex($this);
+    }
+
+    /**
+     * Create new base query.
+     *
+     * @return \ONGR\ElasticsearchDSL\Search
+     */
+    public function newBaseQuery(): Search
+    {
+        return new Search;
+    }
+
+    /**
+     * Handle dynamic method calls into the model.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        return $this->forwardCallTo($this->newQuery(), $method, $parameters);
+    }
+
+    /**
+     * Handle dynamic static method calls into the method.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     */
+    public static function __callStatic($method, $parameters)
+    {
+        return (new static)->{$method}(...$parameters);
     }
 }

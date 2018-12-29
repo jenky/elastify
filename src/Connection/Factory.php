@@ -9,9 +9,10 @@ use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Ring\Future\CompletedFutureArray;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
+use Jenky\LaravelElasticsearch\Contracts\ClientFactory;
 use Psr\Http\Message\ResponseInterface;
 
-class Factory
+class Factory implements ClientFactory
 {
     /**
      * Map configuration array keys with ES ClientBuilder setters.
@@ -56,7 +57,7 @@ class Factory
      * @param  array $config
      * @return \Elasticsearch\Client
      */
-    public function make(array $config)
+    public function make(array $config): Client
     {
         return $this->createClient($config);
     }

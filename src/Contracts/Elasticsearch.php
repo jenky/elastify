@@ -14,5 +14,5 @@ interface Elasticsearch
      * @param  string $index
      * @return Jenky\LaravelElasticsearch\Elasticsearch\Response
      */
-    public function search(Search $search, $index) : Response;
+    public function search(Search $search, $index): Response;
 }
