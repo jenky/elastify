@@ -68,31 +68,6 @@ abstract class Index
      */
     protected $document = Document::class;
 
-    // protected $document;
-
-    /**
-     * Get the underlying query builder instance.
-     *
-     * @return \ONGR\ElasticsearchDSL\Search  $query
-     */
-    public function getQuery()
-    {
-        return $this->query;
-    }
-
-    /**
-     * Set the underlying query builder instance.
-     *
-     * @param  \ONGR\ElasticsearchDSL\Search  $query
-     * @return $this
-     */
-    public function setQuery($query)
-    {
-        $this->query = $query;
-
-        return $this;
-    }
-
     /**
      * Get the document class.
      *
@@ -175,7 +150,7 @@ abstract class Index
      */
     public function searchableAs(): string
     {
-        return ! empty($this->aliases()) ? Arr::first($this->aliases()) : $this->name().'*';
+        return $this->multipleIndices ? $this->name().'-*' : $this->name();
     }
 
     /**
@@ -237,6 +212,7 @@ abstract class Index
         return [
             'settings' => $this->settings(),
             'mappings' => $this->mapping(),
+            'aliases' => $this->aliases(),
         ];
     }
 
@@ -335,7 +311,7 @@ abstract class Index
     }
 
     /**
-     * Get a new query builder for the model's table.
+     * Get a new query builder for the index.
      *
      * @return \Jenky\LaravelElasticsearch\Storage\Builder
      */
