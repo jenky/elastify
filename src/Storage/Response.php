@@ -7,21 +7,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class Response extends LengthAwarePaginator
 {
     /**
-     * The index instance.
-     *
-     * @var \Jenky\LaravelElasticsearch\Storage\Index
-     */
-    protected $index;
-
-    /**
      * @var array
      */
     protected $raw = [];
-
-    /**
-     * @var \Illuminate\Support\Collection
-     */
-    protected $hits;
 
     /**
      * Create elasticsearch response instance.
@@ -84,6 +72,16 @@ class Response extends LengthAwarePaginator
     public function shards()
     {
         return $this->raw['_shards'];
+    }
+
+    /**
+     * Get "hits" values.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function hits()
+    {
+        return $this->items;
     }
 
     /**
