@@ -20,13 +20,6 @@ abstract class Index
     protected $index;
 
     /**
-     * The index aliases.
-     *
-     * @var string|array
-     */
-    protected $aliases;
-
-    /**
      * The index type.
      *
      * @var string
@@ -173,6 +166,11 @@ abstract class Index
         ];
     }
 
+    /**
+     * Get all mapping properties.
+     *
+     * @return array
+     */
     public function properties(): array
     {
         return [];
@@ -185,14 +183,7 @@ abstract class Index
      */
     public function aliases(): array
     {
-        $aliases = (array) $this->aliases;
-
-        if ($this->multipleIndices
-        && ! in_array($this->name(), $aliases)) {
-            $aliases[] = $this->name();
-        }
-
-        return $aliases;
+        return [$this->name()];
     }
 
     /**

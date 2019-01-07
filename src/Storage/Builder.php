@@ -24,6 +24,7 @@ use ONGR\ElasticsearchDSL\Query\TermLevel\ExistsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\FuzzyQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\IdsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\PrefixQuery;
+use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\WildcardQuery;
 use ONGR\ElasticsearchDSL\Search;
@@ -265,6 +266,21 @@ class Builder
     public function filter()
     {
         $this->boolState = BoolQuery::FILTER;
+
+        return $this;
+    }
+
+    /**
+     * Add an term query.
+     *
+     * @param  string $field
+     * @param  string $terms
+     * @param  array $attributes
+     * @return $this
+     */
+    public function term($field, $term, array $attributes = [])
+    {
+        $this->append(new TermQuery($field, $term, $attributes));
 
         return $this;
     }
@@ -660,11 +676,21 @@ class Builder
         return $this;
     }
 
+    /**
+     * Execute the query and get the first result.
+     *
+     * @return \Jenky\LaravelElasticsearch\Storage\Document
+     */
     public function first()
     {
         return $this->get()->first();
     }
 
+    /**
+     * Execute the query and get all results.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection|\Jenky\LaravelElasticsearch\Storage\Document[]
+     */
     public function get($perPage = null, $pageName = 'page', $page = null): Response
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
@@ -672,8 +698,7 @@ class Builder
         $perPage = $perPage ?: $this->index->getPerPage();
 
         $results = $this->search(
-            $this->forPage($page, $perPage)->getQuery()
-                ->toArray()
+            $this->forPage($page, $perPage)->toDSL()
         );
 
         if ($documentClass = $this->getIndex()->getDocument()) {
@@ -687,6 +712,12 @@ class Builder
         ]);
     }
 
+    /**
+     * Perform the search by using search API.
+     *
+     * @param  array $params
+     * @return array
+     */
     public function search(array $params = [])
     {
         return $this->getIndex()->getConnection()->search([
