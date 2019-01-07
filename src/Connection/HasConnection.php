@@ -8,6 +8,13 @@ use Jenky\LaravelElasticsearch\Contracts\ConnectionResolver;
 trait HasConnection
 {
     /**
+     * The connection name for the index.
+     *
+     * @var string
+     */
+    protected $connection;
+
+    /**
      * The connection resolver instance.
      *
      * @var \Jenky\LaravelElasticsearch\Contracts\ConnectionResolver

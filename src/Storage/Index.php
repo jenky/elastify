@@ -13,13 +13,6 @@ abstract class Index
     use ForwardsCalls, HasConnection;
 
     /**
-     * The connection name for the index.
-     *
-     * @var string
-     */
-    protected $connection;
-
-    /**
      * The index name.
      *
      * @var string
