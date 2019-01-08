@@ -134,10 +134,8 @@ class Builder
             $id = $id->toArray();
         }
 
-        $ids = (array) $id;
-
-        $this->query->addQuery(new IdsQuery(
-            $ids,
+        $this->append(new IdsQuery(
+            (array) $id,
             array_filter(compact('type'))
         ));
 
@@ -512,15 +510,15 @@ class Builder
      *
      * @param  array $fields
      * @param  array $parameters
-     * @param  string $preTag
-     * @param  string $postTag
+     * @param  string|array $preTag
+     * @param  string|array $postTag
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-highlighting.html
      * @return $this
      */
     public function highlight($fields = ['_all' => []], $parameters = [], $preTag = '<mark>', $postTag = '</mark>')
     {
-        $highlight = new Highlight();
-        $highlight->setTags([$preTag], [$postTag]);
+        $highlight = new Highlight;
+        $highlight->setTags((array) $preTag, (array) $postTag);
 
         foreach ($fields as $field => $fieldParams) {
             $highlight->addField($field, $fieldParams);

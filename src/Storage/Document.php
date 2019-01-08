@@ -9,6 +9,7 @@ use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HidesAttributes;
 use Illuminate\Database\Eloquent\MassAssignmentException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use JsonSerializable;
@@ -133,6 +134,19 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
     public function getSource(): array
     {
         return $this->original['_source'] ?? [];
+    }
+
+    /**
+     * Get highlight data.
+     *
+     * @param  string|null $field
+     * @return array|null
+     */
+    public function getHighlight($field = null)
+    {
+        $highlight = $this->original['highlight'] ?? [];
+
+        return $field ? Arr::get($highlight, $field) : $highlight;
     }
 
     /**
