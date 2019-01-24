@@ -110,24 +110,13 @@ class Builder
         return $this;
     }
 
-    public function find($id, $type = null)
-    {
-        if (is_array($id) || $id instanceof Arrayable) {
-            return $this->findMany($id, $type);
-        }
-
-        return $this->whereKey($id, $type)->first();
-    }
-
-    public function findMany($ids, $type = null)
-    {
-        if (! empty($ids)) {
-            $this->whereKey($ids, $type);
-        }
-
-        return $this->get();
-    }
-
+    /**
+     * Add a where clause on the primary key to the query.
+     *
+     * @param  mixed $id
+     * @param  string|null $type
+     * @return $this
+     */
     public function whereKey($id, $type = null)
     {
         if ($id instanceof Arrayable) {
@@ -675,9 +664,41 @@ class Builder
     }
 
     /**
+     * Find a document by its primary key.
+     *
+     * @param  mixed $id
+     * @param  string|null $type
+     * @return mixed
+     */
+    public function find($id, $type = null)
+    {
+        if (is_array($id) || $id instanceof Arrayable) {
+            return $this->findMany($id, $type);
+        }
+
+        return $this->whereKey($id, $type)->first();
+    }
+
+    /**
+     * Find multiple documents by their primary key.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|array $ids
+     * @param  string|null $type
+     * @return \Jenky\LaravelElasticsearch\Storage\Response
+     */
+    public function findMany($ids, $type = null)
+    {
+        if (! empty($ids)) {
+            $this->whereKey($ids, $type);
+        }
+
+        return $this->get();
+    }
+
+    /**
      * Execute the query and get the first result.
      *
-     * @return \Jenky\LaravelElasticsearch\Storage\Document
+     * @return \Jenky\LaravelElasticsearch\Storage\Document|array
      */
     public function first()
     {
@@ -687,7 +708,7 @@ class Builder
     /**
      * Execute the query and get all results.
      *
-     * @return \Illuminate\Database\Eloquent\Collection|\Jenky\LaravelElasticsearch\Storage\Document[]
+     * @return \Jenky\LaravelElasticsearch\Storage\Response
      */
     public function get($perPage = null, $pageName = 'page', $page = null): Response
     {
