@@ -19,6 +19,7 @@ use ONGR\ElasticsearchDSL\Query\Geo\GeoDistanceQuery;
 use ONGR\ElasticsearchDSL\Query\Geo\GeoDistanceRangeQuery;
 use ONGR\ElasticsearchDSL\Query\Geo\GeoPolygonQuery;
 use ONGR\ElasticsearchDSL\Query\Geo\GeoShapeQuery;
+use ONGR\ElasticsearchDSL\Query\Joining\NestedQuery;
 use ONGR\ElasticsearchDSL\Query\MatchAllQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\ExistsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\FuzzyQuery;
@@ -583,22 +584,22 @@ class Builder
     /**
      * Add a nested query.
      *
-     * @param  $field
+     * @param  srting $field
      * @param  \Closure $closure
      * @param  string $scoreMode
      * @return $this
      */
     public function nested($field, Closure $closure, $scoreMode = 'avg')
     {
-        // $builder = new self($this->connection, new $this->query());
+        $builder = $this->getIndex()->newQuery();
 
-        // $closure($builder);
+        $closure($builder);
 
-        // $nestedQuery = $builder->query->getQueries();
+        $nestedQuery = $builder->getQuery()->getQueries();
 
-        // $query = new NestedQuery($field, $nestedQuery, ['score_mode' => $score_mode]);
+        $query = new NestedQuery($field, $nestedQuery, ['score_mode' => $scoreMode]);
 
-        // $this->append($query);
+        $this->append($query);
 
         return $this;
     }
@@ -712,17 +713,20 @@ class Builder
      */
     public function get($perPage = null, $pageName = 'page', $page = null): Response
     {
+        $index = $this->getIndex();
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
-        $perPage = $perPage ?: $this->index->getPerPage();
+        $perPage = $perPage ?: $index->getPerPage();
 
         $results = $this->search(
             $this->forPage($page, $perPage)->toDSL()
         );
 
-        if ($documentClass = $this->getIndex()->getDocument()) {
+        if ($documentClass = $index->getDocument()) {
             $results['hits']['hits'] = Collection::make($results['hits']['hits'] ?? [])
-                ->mapInto($documentClass);
+                ->map(function ($result) use ($documentClass, $index) {
+                    return (new $documentClass($result))->setClient($index->getConnection());
+                });
         }
 
         return Response::make($results, $perPage, $page, [

@@ -52,8 +52,8 @@ abstract class Index
      *
      * @var \Jenky\Elastichsearch\Storage\Document
      */
-    // protected $document = Document::class;
-    protected $document;
+    protected $document = Document::class;
+    // protected $document;
 
     /**
      * Get the document class.

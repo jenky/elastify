@@ -4,6 +4,7 @@ namespace Jenky\LaravelElasticsearch\Storage;
 
 use ArrayAccess;
 use DateTimeInterface;
+use Elasticsearch\Client;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,6 +19,13 @@ use RuntimeException;
 class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
 {
     use HidesAttributes;
+
+    /**
+     * The elastic client.
+     *
+     * @var \Elasticsearch\Client
+     */
+    protected $client;
 
     /**
      * The document's attributes.
@@ -136,6 +144,7 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
         return $this->original['_source'] ?? [];
     }
 
+
     /**
      * Get highlight data.
      *
@@ -147,6 +156,19 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
         $highlight = $this->original['highlight'] ?? [];
 
         return $field ? Arr::get($highlight, $field) : $highlight;
+    }
+
+    public function getClient()
+    {
+        return $this->client;
+    }
+
+    public function setClient(Client $client)
+    {
+        dd('1234');
+        $this->client = $client;
+
+        return $this;
     }
 
     /**
@@ -319,6 +341,77 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
     }
 
     /**
+     * Get an attribute from the document.
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    public function getAttribute($key)
+    {
+        if (! $key) {
+            return;
+        }
+
+        // If the attribute exists in the attribute array or has a "get" mutator we will
+        // get the attribute's value. Otherwise, we will proceed as if the developers
+        // are asking for a relationship's value. This covers both types of values.
+        if (array_key_exists($key, $this->attributes) ||
+            $this->hasGetMutator($key)) {
+            return $this->getAttributeValue($key);
+        }
+
+        return;
+    }
+
+    /**
+     * Get a plain attribute (not a relationship).
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    public function getAttributeValue($key)
+    {
+        $value = $this->getAttributeFromArray($key);
+
+        // If the attribute has a get mutator, we will call that then return what
+        // it returns as the value, which is useful for transforming values on
+        // retrieval from the model to a form that is more useful for usage.
+        if ($this->hasGetMutator($key)) {
+            return $this->mutateAttribute($key, $value);
+        }
+
+        // If the attribute exists within the cast array, we will convert it to
+        // an appropriate native PHP type dependant upon the associated value
+        // given with the key in the pair. Dayle made this comment line up.
+        if ($this->hasCast($key)) {
+            return $this->castAttribute($key, $value);
+        }
+
+        // If the attribute is listed as a date, we will convert it to a DateTime
+        // instance on retrieval, which makes it quite convenient to work with
+        // date fields without having to create a mutator for each property.
+        if (in_array($key, $this->getDates()) &&
+            ! is_null($value)) {
+            return $this->asDateTime($value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get an attribute from the $attributes array.
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    protected function getAttributeFromArray($key)
+    {
+        if (isset($this->attributes[$key])) {
+            return $this->attributes[$key];
+        }
+    }
+
+    /**
      * Fill the document with an array of attributes.
      *
      * @param  array  $attributes
@@ -351,7 +444,14 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
             $this->setAttribute($key, $value);
         }
 
+        $this->setDates();
+
         return $this;
+    }
+
+    protected function setDates()
+    {
+        dd($this->getClient());
     }
 
     /**
@@ -466,6 +566,17 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
         preg_match_all('/(?<=^|;)get([^;]+?)Attribute(;|$)/', implode(';', get_class_methods($class)), $matches);
 
         return $matches[1];
+    }
+
+    /**
+     * Determine if a get mutator exists for an attribute.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function hasGetMutator($key)
+    {
+        return method_exists($this, 'get'.Str::studly($key).'Attribute');
     }
 
     /**

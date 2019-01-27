@@ -22,7 +22,7 @@ trait HasConnection
     protected static $resolver;
 
     /**
-     * Get the elasticsearch connection for the model.
+     * Get the elasticsearch connection for the index.
      *
      * @return \Elasticsearch\Client
      */
@@ -32,7 +32,7 @@ trait HasConnection
     }
 
     /**
-     * Get the current connection name for the model.
+     * Get the current connection name for the index.
      *
      * @return string
      */
@@ -42,7 +42,7 @@ trait HasConnection
     }
 
     /**
-     * Set the connection associated with the model.
+     * Set the connection associated with the index.
      *
      * @param  string  $name
      * @return $this
