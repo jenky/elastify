@@ -9,6 +9,6 @@ if (! function_exists('elasticsearch')) {
      */
     function elasticsearch($connection = null)
     {
-        return app('elasticsearch')->connection($connection);
+        return $connection ? app('elasticsearch') : app('elasticsearch')->connection($connection);
     }
 }

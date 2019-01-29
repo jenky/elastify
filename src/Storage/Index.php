@@ -53,6 +53,7 @@ abstract class Index
      * @var \Jenky\Elastichsearch\Storage\Document
      */
     protected $document = Document::class;
+
     // protected $document;
 
     /**
@@ -184,7 +185,9 @@ abstract class Index
      */
     public function aliases(): array
     {
-        return [$this->name()];
+        return [
+            '.'.$this->name() => new \stdClass,
+        ];
     }
 
     /**
@@ -228,7 +231,7 @@ abstract class Index
             ->indices()
             ->create([
                 'index' => $this->getIndex(),
-                'body' => array_filter($this->getConfiguration()),
+                'body' => array_filter($this->configuaration()),
             ]);
     }
 
@@ -270,6 +273,18 @@ abstract class Index
                 'body' => $data['mappings'],
             ]);
         }
+    }
+
+    /**
+     * Flush the index.
+     *
+     * @return void
+     */
+    public function flush()
+    {
+        $this->getConnection()
+            ->indices()
+            ->flush(['index' => $this->getIndex()]);
     }
 
     /**

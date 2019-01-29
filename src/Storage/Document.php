@@ -4,7 +4,6 @@ namespace Jenky\LaravelElasticsearch\Storage;
 
 use ArrayAccess;
 use DateTimeInterface;
-use Elasticsearch\Client;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Database\Eloquent\Collection;
@@ -136,7 +135,6 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
     {
         return $this->original['_source'] ?? [];
     }
-
 
     /**
      * Get highlight data.
