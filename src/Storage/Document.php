@@ -21,13 +21,6 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
     use HidesAttributes;
 
     /**
-     * The elastic client.
-     *
-     * @var \Elasticsearch\Client
-     */
-    protected $client;
-
-    /**
      * The document's attributes.
      *
      * @var array
@@ -156,19 +149,6 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
         $highlight = $this->original['highlight'] ?? [];
 
         return $field ? Arr::get($highlight, $field) : $highlight;
-    }
-
-    public function getClient()
-    {
-        return $this->client;
-    }
-
-    public function setClient(Client $client)
-    {
-        dd('1234');
-        $this->client = $client;
-
-        return $this;
     }
 
     /**
@@ -444,14 +424,7 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
             $this->setAttribute($key, $value);
         }
 
-        $this->setDates();
-
         return $this;
-    }
-
-    protected function setDates()
-    {
-        dd($this->getClient());
     }
 
     /**
