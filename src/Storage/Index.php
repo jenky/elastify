@@ -209,14 +209,12 @@ abstract class Index
      *
      * @return bool
      */
-    public static function exists()
+    public function exists()
     {
-        $instance = new static(...func_get_args());
-
         if (is_null(static::$exists)) {
-            static::$exists = $instance->getConnection()
+            static::$exists = $this->getConnection()
                 ->indices()
-                ->exists(['index' => $instance->getIndex()]);
+                ->exists(['index' => $this->getIndex()]);
         }
 
         return static::$exists;
@@ -227,15 +225,13 @@ abstract class Index
      *
      * @return void
      */
-    public static function create()
+    public function create()
     {
-        $instance = new static(...func_get_args());
-
-        $instance->getConnection()
+        $this->getConnection()
             ->indices()
             ->create([
-                'index' => $instance->getIndex(),
-                'body' => array_filter($instance->configuaration()),
+                'index' => $this->getIndex(),
+                'body' => array_filter($this->configuaration()),
             ]);
     }
 
@@ -244,13 +240,11 @@ abstract class Index
      *
      * @return void
      */
-    public static function delete()
+    public function delete()
     {
-        $instance = new static(...func_get_args());
-
-        $instance->getConnection()
+        $this->getConnection()
             ->indices()
-            ->delete(['index' => $instance->getIndex()]);
+            ->delete(['index' => $this->getIndex()]);
     }
 
     /**
@@ -259,14 +253,13 @@ abstract class Index
      * @param  array $config
      * @return void
      */
-    public static function update(array $config)
+    public function update(array $config)
     {
-        $instance = new static(...func_get_args());
         $data = Arr::only($config, ['settings', 'mappings']);
 
         if (! empty($data['settings'])) {
-            $instance->getConnection()->indices()->putSettings([
-                'index' => $instance->getIndex(),
+            $this->getConnection()->indices()->putSettings([
+                'index' => $this->getIndex(),
                 'body' => [
                     'settings' => $data['settings'],
                 ],
@@ -274,9 +267,9 @@ abstract class Index
         }
 
         if (! empty($data['mappings'])) {
-            $instance->getConnection()->indices()->putMapping([
-                'index' => $instance->getIndex(),
-                'type' => $instance->getType(),
+            $this->getConnection()->indices()->putMapping([
+                'index' => $this->getIndex(),
+                'type' => $this->getType(),
                 'body' => $data['mappings'],
             ]);
         }
@@ -287,23 +280,11 @@ abstract class Index
      *
      * @return void
      */
-    public static function flush()
+    public function flush()
     {
-        $instance = new static(...func_get_args());
-
-        $instance->getConnection()
+        $this->getConnection()
             ->indices()
-            ->flush(['index' => $instance->getIndex()]);
-    }
-
-    /**
-     * Begin querying the index.
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public static function query()
-    {
-        return (new static(...func_get_args()))->newQuery();
+            ->flush(['index' => $this->getIndex()]);
     }
 
     /**
