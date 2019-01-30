@@ -205,16 +205,37 @@ abstract class Index
     }
 
     /**
+     * Create new model instance.
+     *
+     * @return void
+     */
+    public static function make()
+    {
+        return new static(...func_get_args());
+    }
+
+    /**
+     * Begin querying the index.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public static function query()
+    {
+        return (new static(...func_get_args()))->newQuery();
+    }
+
+    /**
      * Check if whether index is exists.
      *
+     * @param  string|null $index
      * @return bool
      */
-    public function exists()
+    protected function exists($index = null)
     {
         if (is_null(static::$exists)) {
             static::$exists = $this->getConnection()
                 ->indices()
-                ->exists(['index' => $this->getIndex()]);
+                ->exists(['index' => $index ?: $this->getIndex()]);
         }
 
         return static::$exists;
@@ -223,14 +244,15 @@ abstract class Index
     /**
      * Create the index.
      *
+     * @param  string|null $index
      * @return void
      */
-    public function create()
+    protected function create($index = null)
     {
         $this->getConnection()
             ->indices()
             ->create([
-                'index' => $this->getIndex(),
+                'index' => $index ?: $this->getIndex(),
                 'body' => array_filter($this->configuaration()),
             ]);
     }
@@ -238,28 +260,31 @@ abstract class Index
     /**
      * Delete the index.
      *
+     * @param  string|null $index
      * @return void
      */
-    public function delete()
+    protected function delete($index = null)
     {
         $this->getConnection()
             ->indices()
-            ->delete(['index' => $this->getIndex()]);
+            ->delete(['index' => $index ?: $this->getIndex()]);
     }
 
     /**
      * Update index configuration.
      *
      * @param  array $config
+     * @param  string|null $index
      * @return void
      */
-    public function update(array $config)
+    protected function update(array $config, $index = null)
     {
         $data = Arr::only($config, ['settings', 'mappings']);
+        $index = $index ?: $this->getIndex();
 
         if (! empty($data['settings'])) {
             $this->getConnection()->indices()->putSettings([
-                'index' => $this->getIndex(),
+                'index' => $index,
                 'body' => [
                     'settings' => $data['settings'],
                 ],
@@ -268,7 +293,7 @@ abstract class Index
 
         if (! empty($data['mappings'])) {
             $this->getConnection()->indices()->putMapping([
-                'index' => $this->getIndex(),
+                'index' => $index,
                 'type' => $this->getType(),
                 'body' => $data['mappings'],
             ]);
@@ -278,13 +303,14 @@ abstract class Index
     /**
      * Flush the index.
      *
+     * @param  string|null $index
      * @return void
      */
-    public function flush()
+    protected function flush($index = null)
     {
         $this->getConnection()
             ->indices()
-            ->flush(['index' => $this->getIndex()]);
+            ->flush(['index' => $index ?: $this->getIndex()]);
     }
 
     /**
@@ -340,6 +366,10 @@ abstract class Index
      */
     public function __call($method, $parameters)
     {
+        if (in_array($method, ['create', 'update', 'delete', 'flush'])) {
+            return $this->{$method}(...$parameters);
+        }
+
         return $this->forwardCallTo($this->newQuery(), $method, $parameters);
     }
 
@@ -352,6 +382,6 @@ abstract class Index
      */
     public static function __callStatic($method, $parameters)
     {
-        return (new static)->{$method}(...$parameters);
+        return (new static(...func_get_args()))->{$method}(...$parameters);
     }
 }

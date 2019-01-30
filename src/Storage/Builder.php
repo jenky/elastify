@@ -10,6 +10,7 @@ use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\CommonTermsQuery;
+use ONGR\ElasticsearchDSL\Query\FullText\MatchPhraseQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\MultiMatchQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\QueryStringQuery;
@@ -318,6 +319,21 @@ class Builder
     public function wildcard($field, $value, $boost = 1.0)
     {
         $this->append(new WildcardQuery($field, $value, ['boost' => $boost]));
+
+        return $this;
+    }
+
+    /**
+     * Add a match phrase query.
+     *
+     * @param  string $field
+     * @param  string $value
+     * @param  array $attributes
+     * @return $this
+     */
+    public function matchPhrase($field, $value, array $attributes = [])
+    {
+        $this->append(new MatchPhraseQuery($field, $value, $attributes));
 
         return $this;
     }
