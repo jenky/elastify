@@ -366,7 +366,7 @@ abstract class Index
      */
     public function __call($method, $parameters)
     {
-        if (in_array($method, ['create', 'update', 'delete', 'flush'])) {
+        if (in_array($method, ['create', 'update', 'delete', 'flush', 'exists'])) {
             return $this->{$method}(...$parameters);
         }
 
