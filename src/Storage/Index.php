@@ -96,7 +96,7 @@ abstract class Index
             );
         }
 
-        $return = $this->index;
+        return $this->index;
     }
 
     /**
