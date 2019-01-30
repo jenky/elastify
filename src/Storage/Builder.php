@@ -340,6 +340,21 @@ class Builder
     }
 
     /**
+     * Add a match phrase query.
+     *
+     * @param  string $field
+     * @param  string $value
+     * @param  array $attributes
+     * @return $this
+     */
+    public function matchPhrase($field, $value, array $attributes = [])
+    {
+        $this->append(new MatchPhraseQuery($field, $value, $attributes));
+
+        return $this;
+    }
+
+    /**
      * Add a boost query.
      *
      * @param  array $parameters
