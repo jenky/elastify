@@ -295,7 +295,7 @@ class Builder
      * @param  string|array $fields
      * @return $this
      */
-    public function exists($fields)
+    public function has($fields)
     {
         $fields = is_array($fields) ? $fields : [$fields];
 
