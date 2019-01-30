@@ -10,6 +10,7 @@ use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\CommonTermsQuery;
+use ONGR\ElasticsearchDSL\Query\FullText\MatchPhraseQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\MultiMatchQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\QueryStringQuery;
@@ -25,6 +26,7 @@ use ONGR\ElasticsearchDSL\Query\TermLevel\ExistsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\FuzzyQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\IdsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\PrefixQuery;
+use ONGR\ElasticsearchDSL\Query\TermLevel\RangeQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\WildcardQuery;
@@ -263,12 +265,12 @@ class Builder
      *
      * @param  string $field
      * @param  string $terms
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function term($field, $term, array $attributes = [])
+    public function term($field, $term, array $parameters = [])
     {
-        $this->append(new TermQuery($field, $term, $attributes));
+        $this->append(new TermQuery($field, $term, $parameters));
 
         return $this;
     }
@@ -278,12 +280,12 @@ class Builder
      *
      * @param  string $field
      * @param  array $terms
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function terms($field, array $terms, array $attributes = [])
+    public function terms($field, array $terms, array $parameters = [])
     {
-        $this->append(new TermsQuery($field, $terms, $attributes));
+        $this->append(new TermsQuery($field, $terms, $parameters));
 
         return $this;
     }
@@ -294,7 +296,7 @@ class Builder
      * @param  string|array $fields
      * @return $this
      */
-    public function exists($fields)
+    public function has($fields)
     {
         $fields = is_array($fields) ? $fields : [$fields];
 
@@ -312,12 +314,27 @@ class Builder
      *
      * @param  string $field
      * @param  string $value
-     * @param  float|null $boost
+     * @param  array $parameters
      * @return $this
      */
-    public function wildcard($field, $value, $boost = 1.0)
+    public function wildcard($field, $value, array $parameters = [])
     {
-        $this->append(new WildcardQuery($field, $value, ['boost' => $boost]));
+        $this->append(new WildcardQuery($field, $value, $parameters));
+
+        return $this;
+    }
+
+    /**
+     * Add a match phrase query.
+     *
+     * @param  string $field
+     * @param  string $value
+     * @param  array $parameters
+     * @return $this
+     */
+    public function matchPhrase($field, $value, array $parameters = [])
+    {
+        $this->append(new MatchPhraseQuery($field, $value, $parameters));
 
         return $this;
     }
@@ -325,12 +342,12 @@ class Builder
     /**
      * Add a boost query.
      *
-     * @param  float|null $boost
+     * @param  array $parameters
      * @return $this
      */
-    public function matchAll($boost = 1.0)
+    public function matchAll(array $parameters = [])
     {
-        $this->append(new MatchAllQuery(['boost' => $boost]));
+        $this->append(new MatchAllQuery($parameters));
 
         return $this;
     }
@@ -340,12 +357,12 @@ class Builder
      *
      * @param  string $field
      * @param  string $term
-     * @param  array  $attributes
+     * @param  array  $parameters
      * @return $this
      */
-    public function match($field, $term, array $attributes = [])
+    public function match($field, $term, array $parameters = [])
     {
-        $this->append(new MatchQuery($field, $term, $attributes));
+        $this->append(new MatchQuery($field, $term, $parameters));
 
         return $this;
     }
@@ -355,12 +372,12 @@ class Builder
      *
      * @param  array $fields
      * @param  string $term
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function multiMatch(array $fields, $term, array $attributes = [])
+    public function multiMatch(array $fields, $term, array $parameters = [])
     {
-        $this->append(new MultiMatchQuery($fields, $term, $attributes));
+        $this->append(new MultiMatchQuery($fields, $term, $parameters));
 
         return $this;
     }
@@ -386,12 +403,12 @@ class Builder
      * @param  string $field
      * @param  string $distance
      * @param  mixed $location
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function geoDistance($field, $distance, $location, array $attributes = [])
+    public function geoDistance($field, $distance, $location, array $parameters = [])
     {
-        $this->append(new GeoDistanceQuery($field, $distance, $location, $attributes));
+        $this->append(new GeoDistanceQuery($field, $distance, $location, $parameters));
 
         return $this;
     }
@@ -403,14 +420,14 @@ class Builder
      * @param  mixed $from
      * @param  mixed $to
      * @param  mixed $location
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function geoDistanceRange($field, $from, $to, array $location, array $attributes = [])
+    public function geoDistanceRange($field, $from, $to, array $location, array $parameters = [])
     {
         $range = compact('from', 'to');
 
-        $this->append(new GeoDistanceRangeQuery($field, $range, $location, $attributes));
+        $this->append(new GeoDistanceRangeQuery($field, $range, $location, $parameters));
 
         return $this;
     }
@@ -420,12 +437,12 @@ class Builder
      *
      * @param  string $field
      * @param  array $points
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function geoPolygon($field, array $points = [], array $attributes = [])
+    public function geoPolygon($field, array $points = [], array $parameters = [])
     {
-        $query = new GeoPolygonQuery($field, $points, $attributes);
+        $query = new GeoPolygonQuery($field, $points, $parameters);
 
         $this->append($query);
 
@@ -438,14 +455,14 @@ class Builder
      * @param  string $field
      * @param  string $type
      * @param  array $coordinates
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function geoShape($field, $type, array $coordinates = [], array $attributes = [])
+    public function geoShape($field, $type, array $coordinates = [], array $parameters = [])
     {
         $query = new GeoShapeQuery();
 
-        $query->addShape($field, $type, $coordinates, $attributes);
+        $query->addShape($field, $type, $coordinates, $parameters);
 
         $this->append($query);
 
@@ -457,12 +474,12 @@ class Builder
      *
      * @param  string $field
      * @param  string $term
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function prefix($field, $term, array $attributes = [])
+    public function prefix($field, $term, array $parameters = [])
     {
-        $this->append(new PrefixQuery($field, $term, $attributes));
+        $this->append(new PrefixQuery($field, $term, $parameters));
 
         return $this;
     }
@@ -471,12 +488,12 @@ class Builder
      * Add a query string query.
      *
      * @param  string $query
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function queryString($query, array $attributes = [])
+    public function queryString($query, array $parameters = [])
     {
-        $this->append(new QueryStringQuery($query, $attributes));
+        $this->append(new QueryStringQuery($query, $parameters));
 
         return $this;
     }
@@ -485,12 +502,12 @@ class Builder
      * Add a simple query string query.
      *
      * @param string $query
-     * @param array $attributes
+     * @param array $parameters
      * @return $this
      */
-    public function simpleQueryString($query, array $attributes = [])
+    public function simpleQueryString($query, array $parameters = [])
     {
-        $this->append(new SimpleQueryStringQuery($query, $attributes));
+        $this->append(new SimpleQueryStringQuery($query, $parameters));
 
         return $this;
     }
@@ -527,12 +544,12 @@ class Builder
      * Add a range query.
      *
      * @param  string $field
-     * @param  array  $attributes
+     * @param  array  $parameters
      * @return $this
      */
-    public function range($field, array $attributes = [])
+    public function range($field, array $parameters = [])
     {
-        $this->append(new RangeQuery($field, $attributes));
+        $this->append(new RangeQuery($field, $parameters));
 
         return $this;
     }
@@ -541,12 +558,12 @@ class Builder
      * Add a regexp query.
      *
      * @param  string $field
-     * @param  array  $attributes
+     * @param  array  $parameters
      * @return $this
      */
-    public function regexp($field, $regex, array $attributes = [])
+    public function regexp($field, $regex, array $parameters = [])
     {
-        $this->append(new RegexpQuery($field, $regex, $attributes));
+        $this->append(new RegexpQuery($field, $regex, $parameters));
 
         return $this;
     }
@@ -556,12 +573,12 @@ class Builder
      *
      * @param  string $field
      * @param  string $term
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function commonTerm($field, $term, array $attributes = [])
+    public function commonTerm($field, $term, array $parameters = [])
     {
-        $this->append(new CommonTermsQuery($field, $term, $attributes));
+        $this->append(new CommonTermsQuery($field, $term, $parameters));
 
         return $this;
     }
@@ -571,12 +588,12 @@ class Builder
      *
      * @param  string $field
      * @param  string $term
-     * @param  array $attributes
+     * @param  array $parameters
      * @return $this
      */
-    public function fuzzy($field, $term, array $attributes = [])
+    public function fuzzy($field, $term, array $parameters = [])
     {
-        $this->append(new FuzzyQuery($field, $term, $attributes));
+        $this->append(new FuzzyQuery($field, $term, $parameters));
 
         return $this;
     }
