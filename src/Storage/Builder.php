@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
@@ -32,6 +33,7 @@ use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\WildcardQuery;
 use ONGR\ElasticsearchDSL\Search;
 use ONGR\ElasticsearchDSL\Sort\FieldSort;
+use ReflectionClass;
 
 class Builder
 {
@@ -54,7 +56,22 @@ class Builder
      *
      * @var string
      */
-    protected $boolState = BoolQuery::MUST;
+    protected $boolQuery = BoolQuery::MUST;
+
+    /**
+     * All of the available clause operators.
+     *
+     * @var array
+     */
+    public $operators = [
+        '=', '<', '>', '<=', '>=', '<>', '!=', '<=>',
+        'lt', 'gt', 'lte', 'gte',
+        // 'like', 'like binary', 'not like', 'ilike',
+        // '&', '|', '^', '<<', '>>',
+        // 'rlike', 'regexp', 'not regexp',
+        // '~', '~*', '!~', '!~*', 'similar to',
+        // 'not similar to', 'not ilike', '~~*', '!~~*',
+    ];
 
     /**
      * Create a new Eloquent query builder instance.
@@ -111,6 +128,184 @@ class Builder
         $this->index = $index;
 
         return $this;
+    }
+
+    /**
+     * Add a basic where clause to the query.
+     *
+     * @param  string|array|\Closure $field
+     * @param  mixed $operator
+     * @param  mixed $value
+     * @param  string $boolQuery
+     * @return $this
+     */
+    public function where($field, $operator = null, $value = null, $boolQuery = BoolQuery::MUST)
+    {
+        // Here we will make some assumptions about the operator. If only 2 values are
+        // passed to the method, we will assume that the operator is an equals sign
+        // and keep going. Otherwise, we'll require the operator to be passed in.
+        [$value, $operator] = $this->prepareValueAndOperator(
+            $value, $operator, func_num_args() === 2
+        );
+
+        // If the field is actually a Closure instance, we will assume the developer
+        // wants to begin a nested where statement which is wrapped in parenthesis.
+        // We'll add that Closure to the query then return back out immediately.
+        if ($operator instanceof Closure) {
+            return $this->nested($field, $operator);
+        }
+
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            [$value, $operator] = [$operator, '='];
+        }
+
+        // if ($this->isRangeOperator($operator)) {
+        //     return $this->range($field, array_merge());
+        // }
+
+        // Todo: implement
+
+        $this->bool($boolQuery);
+
+        return $this;
+    }
+
+    /**
+     * Prepare the value and operator for a where clause.
+     *
+     * @param  string  $value
+     * @param  string  $operator
+     * @param  bool  $useDefault
+     * @return array
+     * @throws \InvalidArgumentException
+     */
+    public function prepareValueAndOperator($value, $operator, $useDefault = false)
+    {
+        if ($useDefault) {
+            return [$operator, '='];
+        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
+            throw new InvalidArgumentException('Illegal operator and value combination.');
+        }
+
+        return [$value, $this->transformOperator($operator)];
+    }
+
+    /**
+     * Transform operator to supported format.
+     *
+     * @param  string $operator
+     * @return string
+     */
+    protected function transformOperator($operator)
+    {
+        $maps = [
+            'lt' => '>',
+            'gt' => '<',
+            'lte' => '<=',
+            'gte' => '>=',
+        ];
+
+        foreach ($maps as $value => $alias) {
+            if ($alias === $operator) {
+                return $value;
+            }
+        }
+
+        return $operator;
+    }
+
+    /**
+     * Determine if the given operator and value combination is legal.
+     *
+     * Prevents using Null values with invalid operators.
+     *
+     * @param  string  $operator
+     * @param  mixed  $value
+     * @return bool
+     */
+    protected function invalidOperatorAndValue($operator, $value)
+    {
+        return is_null($value) && in_array($operator, $this->operators) &&
+             ! in_array($operator, ['=', '<>', '!=']);
+    }
+
+    /**
+     * Determine if the given operator is supported.
+     *
+     * @param  string  $operator
+     * @return bool
+     */
+    protected function invalidOperator($operator)
+    {
+        return ! in_array(strtolower($operator), $this->operators, true);
+    }
+
+    /**
+     * Determine if the given operator is range.
+     *
+     * @param  string  $operator
+     * @return bool
+     */
+    protected function isRangeOperator($operator)
+    {
+        return in_array(strtolower($operator), [
+            'lt', 'gt', 'lte', 'gte',
+        ], true);
+    }
+
+    /**
+     * Add an "or where" clause to the query.
+     *
+     * @param  string|array|\Closure $field
+     * @param  mixed $operator
+     * @param  mixed $value
+     * @return $this
+     */
+    public function orWhere($field, $operator = null, $value = null)
+    {
+        [$value, $operator] = $this->prepareValueAndOperator(
+            $value, $operator, func_num_args() === 2
+        );
+
+        return $this->where($field, $operator, $value, BoolQuery::SHOULD);
+    }
+
+    /**
+     * Add a "where in" clause to the query.
+     *
+     * @param  string $column
+     * @param  mixed $values
+     * @param  array $parameters
+     * @return $this
+     */
+    public function whereIn($field, $values, array $parameters = [], $not = false)
+    {
+        // Next, if the value is Arrayable we need to cast it to its raw array form so we
+        // have the underlying array value instead of an Arrayable object which is not
+        // able to be added as a binding, etc. We will then add to the wheres array.
+        if ($values instanceof Arrayable) {
+            $values = $values->toArray();
+        }
+
+        $boolQuery = $not ? BoolQuery::MUST : BoolQuery::MUST_NOT;
+
+        return $this->bool($boolQuery)->terms($field, $values, $parameters);
+    }
+
+    /**
+     * Add a "where not in" clause to the query.
+     *
+     * @param  string $field
+     * @param  mixed $values
+     * @param  array $parameters
+     * @return $this
+     */
+    public function whereNotIn($field, $values, array $parameters = [])
+    {
+        return $this->whereIn($field, $values, $parameters, true);
     }
 
     /**
@@ -215,13 +410,26 @@ class Builder
     }
 
     /**
+     * Set bool query operation.
+     *
+     * @param  string $bool
+     * @return $this
+     */
+    public function bool($bool)
+    {
+        $this->boolQuery = $this->prepareBoolQuery($bool);
+
+        return $this;
+    }
+
+    /**
      * Switch to a should statement.
      *
      * @return $this
      */
     public function should()
     {
-        $this->boolState = BoolQuery::SHOULD;
+        $this->boolQuery = BoolQuery::SHOULD;
 
         return $this;
     }
@@ -233,7 +441,7 @@ class Builder
      */
     public function must()
     {
-        $this->boolState = BoolQuery::MUST;
+        $this->boolQuery = BoolQuery::MUST;
 
         return $this;
     }
@@ -245,7 +453,7 @@ class Builder
      */
     public function mustNot()
     {
-        $this->boolState = BoolQuery::MUST_NOT;
+        $this->boolQuery = BoolQuery::MUST_NOT;
 
         return $this;
     }
@@ -255,7 +463,7 @@ class Builder
      */
     public function filter()
     {
-        $this->boolState = BoolQuery::FILTER;
+        $this->boolQuery = BoolQuery::FILTER;
 
         return $this;
     }
@@ -663,9 +871,27 @@ class Builder
      *
      * @return string
      */
-    public function getBoolState()
+    public function getBoolQuery()
     {
-        return $this->boolState;
+        return $this->boolQuery;
+    }
+
+    /**
+     * Determine if the given bool query operation is legal.
+     *
+     * @param  string $bool
+     * @return string
+     * @throws \InvalidArgumentException
+     */
+    protected function prepareBoolQuery($bool)
+    {
+        $reflect = new ReflectionClass(BoolQuery::class);
+
+        if (! in_array($bool, $reflect->getConstants())) {
+            throw new InvalidArgumentException('Illegal bool query operation.');
+        }
+
+        return $bool;
     }
 
     /**
@@ -676,7 +902,7 @@ class Builder
      */
     public function append(BuilderInterface $query)
     {
-        $this->query->addQuery($query, $this->getBoolState());
+        $this->query->addQuery($query, $this->getBoolQuery());
 
         return $this;
     }
@@ -769,7 +995,7 @@ class Builder
      */
     public function first()
     {
-        return $this->get()->first();
+        return $this->limit(1)->get()->first();
     }
 
     /**
