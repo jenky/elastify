@@ -112,11 +112,11 @@ class Factory implements ClientFactory
         switch ($driver) {
             case 'default':
                 $logObject = ClientBuilder::defaultLogger(Arr::get($config, 'path'), Arr::get($config, 'level'));
-                $clientBuilder->setLogger($logObject);
+                $client->setLogger($logObject);
                 break;
 
             case 'logger':
-                $clientBuilder->setLogger($this->container['log']->channel($Arr::get($config, 'channel')));
+                $client->setLogger($this->container['log']->channel($Arr::get($config, 'channel')));
                 break;
 
             default:
