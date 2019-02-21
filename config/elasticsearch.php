@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('ES_CONNECTION', 'default'),
+    'default' => env('ELASTICSEARCH_CONNECTION', 'default'),
 
     /*
     |--------------------------------------------------------------------------
@@ -30,11 +30,11 @@ return [
         'default' => [
             'hosts' => [
                 [
-                    'host' => env('ES_HOST', 'localhost'),
-                    'port' => env('ES_PORT', 9200),
-                    'scheme' => env('ES_SCHEME', null),
-                    'user' => env('ES_USER', null),
-                    'pass' => env('ES_PASS', null),
+                    'host' => env('ELASTICSEARCH_HOST', 'localhost'),
+                    'port' => env('ELASTICSEARCH_PORT', 9200),
+                    'scheme' => env('ELASTICSEARCH_SCHEME', null),
+                    'user' => env('ELASTICSEARCH_USER', null),
+                    'pass' => env('ELASTICSEARCH_PASS', null),
 
                     // If you are connecting to an Elasticsearch instance on AWS, you will need these values as well
                     'aws' => env('AWS_ELASTICSEARCH_ENABLED', false),
@@ -45,7 +45,7 @@ return [
             ],
 
             'logging' => [
-                'driver' => null,
+                'driver' => env('ELASTICSEARCH_LOG_DRIVER'),
 
                 'drivers' => [
                     'default' => [
@@ -54,7 +54,7 @@ return [
                     ],
 
                     'logger' => [
-                        'channel' => 'daily',
+                        'channel' => env('ELASTICSEARCH_LOG_CHANNEL', 'daily'),
                     ],
                 ],
             ],
