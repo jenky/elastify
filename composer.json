@@ -47,7 +47,10 @@
         "laravel": {
             "providers": [
                 "Jenky\\LaravelElasticsearch\\ElasticsearchServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "ES": "Jenky\\LaravelElasticsearch\\Facades\\ES"
+            }
         }
     },
     "config": {

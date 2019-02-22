@@ -45,7 +45,7 @@ return [
             ],
 
             'logging' => [
-                'driver' => env('ELASTICSEARCH_LOG_DRIVER'),
+                'driver' => env('ELASTICSEARCH_LOG_DRIVER', null),
 
                 'drivers' => [
                     'default' => [

@@ -650,11 +650,11 @@ class Query
      * @param  array $parameters
      * @return $this
      */
-    public function geoDistanceRange($field, $from, $to, array $location, array $parameters = [])
+    public function geoDistanceRange($field, $from, $to, $location, array $parameters = [])
     {
         $range = compact('from', 'to');
 
-        $this->append(new GeoDistanceRangeQuery($field, $range, $location, $parameters));
+        $this->append(new GeoDistanceQuery($field, $range, $location, $parameters));
 
         return $this;
     }
