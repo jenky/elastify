@@ -55,9 +55,9 @@ class Factory implements ClientFactory
      * the default client.
      *
      * @param  array $config
-     * @return \Jenky\LaravelElasticsearch\Connection\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    public function make(array $config): Client
+    public function make(array $config)
     {
         return $this->createClient($config);
     }
@@ -66,9 +66,9 @@ class Factory implements ClientFactory
      * Build and configure an Elasticsearch client.
      *
      * @param  array $config
-     * @return \Jenky\LaravelElasticsearch\Connection\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    protected function createClient(array $config): Client
+    protected function createClient(array $config)
     {
         $clientBuilder = ClientBuilder::create();
 
@@ -90,7 +90,7 @@ class Factory implements ClientFactory
         $this->configureLogging($clientBuilder, $config);
         $this->configureAwsHandlers($clientBuilder, $config);
 
-        return new Client($clientBuilder->build());
+        return new Connection($clientBuilder->build());
     }
 
     /**

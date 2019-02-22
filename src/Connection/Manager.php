@@ -2,10 +2,10 @@
 
 namespace Jenky\LaravelElasticsearch\Connection;
 
-use Elasticsearch\Client;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
+use Jenky\LaravelElasticsearch\Contracts\ConnectionInterface;
 use Jenky\LaravelElasticsearch\Contracts\ConnectionResolver;
 
 class Manager implements ConnectionResolver
@@ -32,6 +32,13 @@ class Manager implements ConnectionResolver
     protected $connections = [];
 
     /**
+     * The custom connection resolvers.
+     *
+     * @var array
+     */
+    protected $extensions = [];
+
+    /**
      * Create a new database manager instance.
      *
      * @param  \Illuminate\Foundation\Application  $app
@@ -48,9 +55,9 @@ class Manager implements ConnectionResolver
      * Get a database connection instance.
      *
      * @param  string  $name
-     * @return \Elasticsearch\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    public function connection($name = null): Client
+    public function connection($name = null): ConnectionInterface
     {
         $name = $name ?: $this->getDefaultConnection();
 
@@ -67,11 +74,18 @@ class Manager implements ConnectionResolver
      * Make the database connection instance.
      *
      * @param  string  $name
-     * @return \Elasticsearch\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    protected function makeConnection($name): Client
+    protected function makeConnection($name)
     {
         $config = $this->configuration($name);
+
+        // First we will check by the connection name to see if an extension has been
+        // registered specifically for that connection. If it has we will call the
+        // Closure and pass it the config allowing it to resolve the connection.
+        if (isset($this->extensions[$name])) {
+            return call_user_func($this->extensions[$name], $config, $name);
+        }
 
         return $this->factory->make($config);
     }
@@ -118,5 +132,39 @@ class Manager implements ConnectionResolver
     public function setDefaultConnection($name): string
     {
         $this->app['config']['elasticsearch.default'] = $name;
+    }
+
+    /**
+     * Register an extension connection resolver.
+     *
+     * @param  string    $name
+     * @param  callable  $resolver
+     * @return void
+     */
+    public function extend($name, callable $resolver)
+    {
+        $this->extensions[$name] = $resolver;
+    }
+
+    /**
+     * Return all of the created connections.
+     *
+     * @return array
+     */
+    public function getConnections()
+    {
+        return $this->connections;
+    }
+
+    /**
+     * Dynamically pass methods to the default connection.
+     *
+     * @param  string  $method
+     * @param  array   $parameters
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        return $this->connection()->{$method}(...$parameters);
     }
 }

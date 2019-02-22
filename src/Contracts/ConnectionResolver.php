@@ -2,17 +2,15 @@
 
 namespace Jenky\LaravelElasticsearch\Contracts;
 
-use Elasticsearch\Client;
-
 interface ConnectionResolver
 {
     /**
      * Get a database connection instance.
      *
      * @param  string  $name
-     * @return \Elasticsearch\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    public function connection($name = null): Client;
+    public function connection($name = null): ConnectionInterface;
 
     /**
      * Get the default connection name.

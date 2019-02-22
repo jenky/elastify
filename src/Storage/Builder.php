@@ -145,7 +145,9 @@ class Builder
         // passed to the method, we will assume that the operator is an equals sign
         // and keep going. Otherwise, we'll require the operator to be passed in.
         [$value, $operator] = $this->prepareValueAndOperator(
-            $value, $operator, func_num_args() === 2
+            $value,
+            $operator,
+            func_num_args() === 2
         );
 
         // If the field is actually a Closure instance, we will assume the developer
@@ -179,8 +181,8 @@ class Builder
      * @param  string  $value
      * @param  string  $operator
      * @param  bool  $useDefault
-     * @return array
      * @throws \InvalidArgumentException
+     * @return array
      */
     public function prepareValueAndOperator($value, $operator, $useDefault = false)
     {
@@ -267,7 +269,9 @@ class Builder
     public function orWhere($field, $operator = null, $value = null)
     {
         [$value, $operator] = $this->prepareValueAndOperator(
-            $value, $operator, func_num_args() === 2
+            $value,
+            $operator,
+            func_num_args() === 2
         );
 
         return $this->where($field, $operator, $value, BoolQuery::SHOULD);
@@ -880,8 +884,8 @@ class Builder
      * Determine if the given bool query operation is legal.
      *
      * @param  string $bool
-     * @return string
      * @throws \InvalidArgumentException
+     * @return string
      */
     protected function prepareBoolQuery($bool)
     {

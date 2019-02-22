@@ -10,7 +10,7 @@ interface ClientFactory
      * Make the Elasticsearch client for the given configuration.
      *
      * @param  array $config
-     * @return \Elasticsearch\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    public function make(array $config): Client;
+    public function make(array $config);
 }
