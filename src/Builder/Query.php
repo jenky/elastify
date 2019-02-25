@@ -58,6 +58,13 @@ class Query
     protected $from;
 
     /**
+     * The index default type.
+     *
+     * @var string
+     */
+    protected $type;
+
+    /**
      * The DSL query builder.
      *
      * @var \ONGR\ElasticsearchDSL\Search
@@ -136,13 +143,111 @@ class Query
      * Set the indices/aliases which the query is targeting.
      *
      * @param  string $from
+     * @param  string|null $type
      * @return $this
      */
-    public function from($from)
+    public function from($from, $type = null)
     {
         $this->from = $from;
 
+        if ($type) {
+            $this->type($type);
+        }
+
         return $this;
+    }
+
+    /**
+     * Set the index type.
+     *
+     * @param  string $type
+     * @return $this
+     */
+    public function type($type)
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * Check if whether indices/aliases with/without type are exists.
+     *
+     * @return bool
+     */
+    public function indexExists()
+    {
+        return $this->getConnection()->indices()->exists(array_filter([
+            'index' => $this->from,
+            'type' => $this->type,
+        ]));
+    }
+
+    /**
+     * Create a new index.
+     *
+     * @param  array $params
+     * @return void
+     */
+    public function create(array $params)
+    {
+        $data = [
+            'index' => $this->index,
+            'body' => $params,
+        ];
+
+        $this->getConnection()->indices()->create($data);
+    }
+
+    /**
+     * Create a new index if not exists.
+     *
+     * @param  array $params
+     * @return void
+     */
+    public function createIfNotExists(array $params)
+    {
+        if (! $this->indexExists()) {
+            $this->create($params);
+        }
+    }
+
+    /**
+     * Delete an index.
+     *
+     * @return void
+     */
+    public function drop()
+    {
+        $this->getConnection()->indices()->delete([
+            'index' => $this->index,
+        ]);
+    }
+
+    /**
+     * Delete an existing index.
+     *
+     * @return void
+     */
+    public function dropIfExists()
+    {
+        if ($this->indexExists()) {
+            $this->drop();
+        }
+    }
+
+    /**
+     * Perform the search by using search API.
+     *
+     * @param  array $params
+     * @return array
+     */
+    public function search(array $params = [])
+    {
+        return $this->getConnection()->search([
+            'index' => $this->from,
+            'body' => $params,
+        ]);
     }
 
     /**
@@ -520,12 +625,16 @@ class Query
     /**
      * Add an exists query.
      *
-     * @param  string|array $fields
+     * @param  null|string|array $fields
      * @return $this
      */
-    public function has($fields)
+    public function exists($fields = null)
     {
-        $fields = is_array($fields) ? $fields : [$fields];
+        if (is_null($fields)) {
+            return $this->indexExists();
+        }
+
+        $fields = is_array($fields) ? $fields : func_get_args();
 
         foreach ($fields as $field) {
             $query = new ExistsQuery($field);
@@ -1033,20 +1142,6 @@ class Query
         return Response::make($results, $perPage, $page, [
             'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
-        ]);
-    }
-
-    /**
-     * Perform the search by using search API.
-     *
-     * @param  array $params
-     * @return array
-     */
-    public function search(array $params = [])
-    {
-        return $this->getConnection()->search([
-            'index' => $this->from,
-            'body' => $params,
         ]);
     }
 

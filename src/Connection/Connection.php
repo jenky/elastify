@@ -34,11 +34,22 @@ class Connection implements ConnectionInterface
      * Begin a fluent query against elasticsearch indices.
      *
      * @param  string $index
+     * @param  string|null $type
      * @return mixed
      */
-    public function index($index)
+    public function index($index, $type = null)
     {
-        return new Query($this, $this->getQueryBuilder());
+        return $this->query()->from($index, $type);
+    }
+
+    /**
+     * Get a new query builder instance.
+     *
+     * @return \Jenky\LaravelElasticsearch\Builder\Query
+     */
+    public function query()
+    {
+        return new Query($this, $this->getQueryBuilder());;
     }
 
     /**
