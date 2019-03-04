@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Ring\Future\CompletedFutureArray;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
+use Jenky\LaravelElasticsearch\Connection\Connection;
 use Jenky\LaravelElasticsearch\Contracts\ClientFactory;
 use Psr\Http\Message\ResponseInterface;
 
@@ -90,7 +91,9 @@ class Factory implements ClientFactory
         $this->configureLogging($clientBuilder, $config);
         $this->configureAwsHandlers($clientBuilder, $config);
 
-        return new Connection($clientBuilder->build());
+        $client = $clientBuilder->build();
+
+        return $this->container->makeWith(Connection::class, compact('client'));
     }
 
     /**
@@ -111,12 +114,17 @@ class Factory implements ClientFactory
 
         switch ($driver) {
             case 'default':
-                $logObject = ClientBuilder::defaultLogger(Arr::get($config, 'path'), Arr::get($config, 'level'));
+                $logObject = ClientBuilder::defaultLogger(
+                    Arr::get($config, 'path'),
+                    Arr::get($config, 'level')
+                );
                 $client->setLogger($logObject);
                 break;
 
             case 'logger':
-                $client->setLogger($this->container['log']->channel(Arr::get($config, 'channel')));
+                $client->setLogger(
+                    $this->container['log']->channel(Arr::get($config, 'channel'))
+                );
                 break;
 
             default:

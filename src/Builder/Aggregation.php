@@ -24,7 +24,7 @@ use ONGR\ElasticsearchDSL\Aggregation\Metric\SumAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Metric\ValueCountAggregation;
 use ONGR\ElasticsearchDSL\Search;
 
-class AggregationBuilder
+class Aggregation
 {
     use BuildsQueries;
 
@@ -174,8 +174,17 @@ class AggregationBuilder
         $extendedBoundsMax = null,
         $keyed = null
     ) {
-        $aggregation = new HistogramAggregation($name, $field, $interval, $minDocCount, $orderMode, $orderDirection,
-            $extendedBoundsMin, $extendedBoundsMax, $keyed);
+        $aggregation = new HistogramAggregation(
+            $name,
+            $field,
+            $interval,
+            $minDocCount,
+            $orderMode,
+            $orderDirection,
+            $extendedBoundsMin,
+            $extendedBoundsMax,
+            $keyed
+        );
 
         return $this->append($aggregation);
     }

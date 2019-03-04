@@ -3,7 +3,6 @@
 namespace Jenky\LaravelElasticsearch\Builder;
 
 use Closure;
-use Illuminate\Container\Container;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Str;
@@ -266,6 +265,23 @@ class Query
                 'index' => $this->from,
                 'type' => $this->type,
             ]));
+    }
+
+    /**
+     * Retrieve the "count" result of the query.
+     *
+     * @param  bool  $raw
+     * @return int
+     */
+    public function count($raw = false)
+    {
+        $response = $this->getConnection()
+            ->count(array_filter([
+                'index' => $this->from,
+                'type' => $this->type,
+            ]));
+
+        return $raw ? $response : $response['count'] ?? 0;
     }
 
     /**
@@ -963,17 +979,27 @@ class Query
         return $this;
     }
 
+    protected function generateAggregationName($field)
+    {
+        [$one, $caller] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+
+        return sprintf('%s_%s', $caller['function'], $field);
+    }
+
     /**
-     * Retrieve the average of the values of a given column.
+     * Retrieve the average of the values of a given field.
      *
-     * @param  string  $column
+     * @param  string  $field
+     * @param  string|null $name
      * @return mixed
      */
     public function avg($field, $name = null)
     {
-        $name = $name ?: 'average_'.$field;
+        $name = $name ?: $this->generateAggregationName($field);
 
-        return $this->aggregate(__FUNCTION__, [$column]);
+        return $this->aggregate(function (Aggregation $builder) use ($field, $name) {
+            $builder->average($name, $field);
+        });
     }
 
     /**
@@ -985,6 +1011,54 @@ class Query
     public function average($column)
     {
         return $this->avg($column);
+    }
+
+    /**
+     * Retrieve the sum of the values of a given field.
+     *
+     * @param  string  $field
+     * @param  string|null $name
+     * @return mixed
+     */
+    public function sum($field, $name = null)
+    {
+        $name = $name ?: $this->generateAggregationName($field);
+
+        return $this->aggregate(function (Aggregation $builder) use ($field, $name) {
+            $builder->sum($name, $field);
+        });
+    }
+
+    /**
+     * Retrieve the minimum value of a given field.
+     *
+     * @param  string  $field
+     * @param  string|null $name
+     * @return mixed
+     */
+    public function min($field, $name = null)
+    {
+        $name = $name ?: $this->generateAggregationName($field);
+
+        return $this->aggregate(function (Aggregation $builder) use ($field, $name) {
+            $builder->min($name, $field);
+        });
+    }
+
+    /**
+     * Retrieve the maximum of the values of a given field.
+     *
+     * @param  string  $field
+     * @param  string|null $name
+     * @return mixed
+     */
+    public function max($field, $name = null)
+    {
+        $name = $name ?: $this->generateAggregationName($field);
+
+        return $this->aggregate(function (Aggregation $builder) use ($field, $name) {
+            $builder->max($name, $field);
+        });
     }
 
     /**
@@ -1106,28 +1180,14 @@ class Query
         );
 
         return $this->paginator(
-            $results, $perPage, $page, [
+            $results,
+            $perPage,
+            $page,
+            [
                 'path' => Paginator::resolveCurrentPath(),
                 'pageName' => $pageName,
             ]
         );
-    }
-
-    /**
-     * Create a new length-aware paginator instance.
-     *
-     * @param  \Illuminate\Support\Collection  $items
-     * @param  int  $total
-     * @param  int  $perPage
-     * @param  int  $currentPage
-     * @param  array  $options
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
-    protected function paginator($items, $perPage, $currentPage, $options)
-    {
-        return Container::getInstance()->makeWith(Response::class, compact(
-            'items', 'perPage', 'currentPage', 'options'
-        ));
     }
 
     /**

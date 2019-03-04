@@ -3,6 +3,8 @@
 namespace Jenky\LaravelElasticsearch\Storage;
 
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Jenky\LaravelElasticsearch\Contracts\Paginator;
 
 class Response extends LengthAwarePaginator implements Paginator
@@ -93,5 +95,27 @@ class Response extends LengthAwarePaginator implements Paginator
     public function raw()
     {
         return $this->raw;
+    }
+
+    /**
+     * Get the "aggregations" values.
+     *
+     * @return array
+     */
+    public function aggregations()
+    {
+        return $this->raw['aggregations'] ?? [];
+    }
+
+    /**
+     * Get the aggregation value
+     *
+     * @param  string $key
+     * @param  mixed $default
+     * @return void
+     */
+    public function aggregation($key, $default = null)
+    {
+        return Arr::get($this->aggregations(), $key, $default);
     }
 }

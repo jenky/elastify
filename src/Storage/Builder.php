@@ -36,10 +36,10 @@ class Builder
      * @var array
      */
     protected $passthru = [
-        'insert', 'toDSL',
-        'exists',
-        // 'count', 'min', 'max', 'avg', 'average', 'sum',
-        'getConnection',
+        'insert', 'exists', 'indexExists', 'flush', 'create', 'drop', 'createIfNotExists', 'dropIfExists',
+        'count',
+        // 'min', 'max', 'avg', 'average', 'sum',
+        'toDSL', 'getConnection',
     ];
 
     /**

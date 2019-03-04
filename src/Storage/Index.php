@@ -469,7 +469,8 @@ abstract class Index
         }
 
         return Arr::get(
-            static::$globalScopes, static::class.'.'.get_class($scope)
+            static::$globalScopes,
+            static::class.'.'.get_class($scope)
         );
     }
 

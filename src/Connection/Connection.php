@@ -49,7 +49,8 @@ class Connection implements ConnectionInterface
      */
     public function query()
     {
-        return new Query($this, $this->getQueryGrammar());;
+        return new Query($this, $this->getQueryGrammar());
+        ;
     }
 
     /**

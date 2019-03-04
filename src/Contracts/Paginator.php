@@ -33,4 +33,22 @@ interface Paginator extends LengthAwarePaginator
      * @return \Illuminate\Support\Collection
      */
     public function hits();
+
+    /**
+     * Get the "aggregations" values.
+     *
+     * @return array
+     */
+    public function aggregations();
+
+    /**
+     * Get the aggregation value
+     *
+     * @param  string $key
+     * @param  mixed $default
+     * @return void
+     */
+    public function aggregation($key, $default = null);
+
+    // public function suggest();
 }

@@ -2,6 +2,9 @@
 
 namespace Jenky\LaravelElasticsearch\Concerns;
 
+use Illuminate\Container\Container;
+use Jenky\LaravelElasticsearch\Storage\Response;
+
 trait BuildsQueries
 {
     /**
@@ -51,5 +54,25 @@ trait BuildsQueries
         }
 
         return $this;
+    }
+
+    /**
+     * Create a new length-aware paginator instance.
+     *
+     * @param  \Illuminate\Support\Collection  $items
+     * @param  int  $total
+     * @param  int  $perPage
+     * @param  int  $currentPage
+     * @param  array  $options
+     * @return \Jenky\LaravelElasticsearch\Storage\Response
+     */
+    protected function paginator($items, $perPage, $currentPage, $options)
+    {
+        return Container::getInstance()->makeWith(Response::class, compact(
+            'items',
+            'perPage',
+            'currentPage',
+            'options'
+        ));
     }
 }
