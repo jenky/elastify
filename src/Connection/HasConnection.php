@@ -2,7 +2,6 @@
 
 namespace Jenky\LaravelElasticsearch\Connection;
 
-use Elasticsearch\Client;
 use Jenky\LaravelElasticsearch\Contracts\ConnectionResolver;
 
 trait HasConnection
@@ -24,9 +23,9 @@ trait HasConnection
     /**
      * Get the elasticsearch connection for the index.
      *
-     * @return \Elasticsearch\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    public function getConnection(): Client
+    public function getConnection()
     {
         return static::resolveConnection($this->getConnectionName());
     }
@@ -58,9 +57,9 @@ trait HasConnection
      * Resolve a connection instance.
      *
      * @param  string|null  $connection
-     * @return \Elasticsearch\Client
+     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
      */
-    public static function resolveConnection($connection = null): Client
+    public static function resolveConnection($connection = null)
     {
         return static::$resolver->connection($connection);
     }

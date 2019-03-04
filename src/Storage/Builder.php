@@ -3,91 +3,140 @@
 namespace Jenky\LaravelElasticsearch\Storage;
 
 use Closure;
-use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Collection;
-use InvalidArgumentException;
-use ONGR\ElasticsearchDSL\BuilderInterface;
-use ONGR\ElasticsearchDSL\Highlight\Highlight;
-use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
-use ONGR\ElasticsearchDSL\Query\FullText\CommonTermsQuery;
-use ONGR\ElasticsearchDSL\Query\FullText\MatchPhraseQuery;
-use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
-use ONGR\ElasticsearchDSL\Query\FullText\MultiMatchQuery;
-use ONGR\ElasticsearchDSL\Query\FullText\QueryStringQuery;
-use ONGR\ElasticsearchDSL\Query\FullText\SimpleQueryStringQuery;
-use ONGR\ElasticsearchDSL\Query\Geo\GeoBoundingBoxQuery;
-use ONGR\ElasticsearchDSL\Query\Geo\GeoDistanceQuery;
-use ONGR\ElasticsearchDSL\Query\Geo\GeoDistanceRangeQuery;
-use ONGR\ElasticsearchDSL\Query\Geo\GeoPolygonQuery;
-use ONGR\ElasticsearchDSL\Query\Geo\GeoShapeQuery;
-use ONGR\ElasticsearchDSL\Query\Joining\NestedQuery;
-use ONGR\ElasticsearchDSL\Query\MatchAllQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\ExistsQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\FuzzyQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\IdsQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\PrefixQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\RangeQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\WildcardQuery;
-use ONGR\ElasticsearchDSL\Search;
-use ONGR\ElasticsearchDSL\Sort\FieldSort;
-use ReflectionClass;
+use Illuminate\Support\Traits\ForwardsCalls;
+use Illuminate\Support\Traits\Macroable;
+use Jenky\LaravelElasticsearch\Builder\Query;
 
 class Builder
 {
+    use ForwardsCalls, Macroable {
+        __call as macroCall;
+    }
+
     /**
-     * The base query builder instance.
-     *
-     * @var \ONGR\ElasticsearchDSL\Search
+     * @var \Jenky\LaravelElasticsearch\Builder\Query
      */
     protected $query;
 
     /**
-     * The model being queried.
-     *
-     * @var \Jenky\LaravelElasticsearch\Storage\Index
+     * @var \Jenky\ScoutElasticsearch\Elasticsearch\Index
      */
     protected $index;
 
     /**
-     * Query bool state.
-     *
-     * @var string
-     */
-    protected $boolQuery = BoolQuery::MUST;
-
-    /**
-     * All of the available clause operators.
+     * All of the locally registered builder macros.
      *
      * @var array
      */
-    public $operators = [
-        '=', '<', '>', '<=', '>=', '<>', '!=', '<=>',
-        'lt', 'gt', 'lte', 'gte',
-        // 'like', 'like binary', 'not like', 'ilike',
-        // '&', '|', '^', '<<', '>>',
-        // 'rlike', 'regexp', 'not regexp',
-        // '~', '~*', '!~', '!~*', 'similar to',
-        // 'not similar to', 'not ilike', '~~*', '!~~*',
+    protected $localMacros = [];
+
+    /**
+     * The methods that should be returned from query builder.
+     *
+     * @var array
+     */
+    protected $passthru = [
+        'insert', 'toDSL',
+        'exists',
+        // 'count', 'min', 'max', 'avg', 'average', 'sum',
+        'getConnection',
     ];
 
     /**
-     * Create a new Eloquent query builder instance.
+     * Applied global scopes.
      *
-     * @param  \ONGR\ElasticsearchDSL\Search  $query
+     * @var array
+     */
+    protected $scopes = [];
+
+    /**
+     * Removed global scopes.
+     *
+     * @var array
+     */
+    protected $removedScopes = [];
+
+    /**
+     * Create new query builder instance.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Builder\Query $query
      * @return void
      */
-    public function __construct(Search $query)
+    public function __construct(Query $query)
     {
         $this->query = $query;
     }
 
     /**
+     * Register a new global scope.
+     *
+     * @param  string  $identifier
+     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|\Closure  $scope
+     * @return $this
+     */
+    public function withGlobalScope($identifier, $scope)
+    {
+        $this->scopes[$identifier] = $scope;
+
+        if (method_exists($scope, 'extend')) {
+            $scope->extend($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove a registered global scope.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|string  $scope
+     * @return $this
+     */
+    public function withoutGlobalScope($scope)
+    {
+        if (! is_string($scope)) {
+            $scope = get_class($scope);
+        }
+
+        unset($this->scopes[$scope]);
+
+        $this->removedScopes[] = $scope;
+
+        return $this;
+    }
+
+    /**
+     * Remove all or passed registered global scopes.
+     *
+     * @param  array|null  $scopes
+     * @return $this
+     */
+    public function withoutGlobalScopes(array $scopes = null)
+    {
+        if (! is_array($scopes)) {
+            $scopes = array_keys($this->scopes);
+        }
+
+        foreach ($scopes as $scope) {
+            $this->withoutGlobalScope($scope);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get an array of global scopes that were removed from the query.
+     *
+     * @return array
+     */
+    public function removedScopes()
+    {
+        return $this->removedScopes;
+    }
+
+    /**
      * Get the underlying query builder instance.
      *
-     * @return \ONGR\ElasticsearchDSL\Search  $query
+     * @return \Jenky\LaravelElasticsearch\Builder\Query
      */
     public function getQuery()
     {
@@ -97,7 +146,7 @@ class Builder
     /**
      * Set the underlying query builder instance.
      *
-     * @param  \ONGR\ElasticsearchDSL\Search  $query
+     * @param  \Jenky\LaravelElasticsearch\Builder\Query  $query
      * @return $this
      */
     public function setQuery($query)
@@ -127,879 +176,101 @@ class Builder
     {
         $this->index = $index;
 
-        return $this;
-    }
-
-    /**
-     * Add a basic where clause to the query.
-     *
-     * @param  string|array|\Closure $field
-     * @param  mixed $operator
-     * @param  mixed $value
-     * @param  string $boolQuery
-     * @return $this
-     */
-    public function where($field, $operator = null, $value = null, $boolQuery = BoolQuery::MUST)
-    {
-        // Here we will make some assumptions about the operator. If only 2 values are
-        // passed to the method, we will assume that the operator is an equals sign
-        // and keep going. Otherwise, we'll require the operator to be passed in.
-        [$value, $operator] = $this->prepareValueAndOperator(
-            $value,
-            $operator,
-            func_num_args() === 2
-        );
-
-        // If the field is actually a Closure instance, we will assume the developer
-        // wants to begin a nested where statement which is wrapped in parenthesis.
-        // We'll add that Closure to the query then return back out immediately.
-        if ($operator instanceof Closure) {
-            return $this->nested($field, $operator);
-        }
-
-        // If the given operator is not found in the list of valid operators we will
-        // assume that the developer is just short-cutting the '=' operators and
-        // we will set the operators to '=' and set the values appropriately.
-        if ($this->invalidOperator($operator)) {
-            [$value, $operator] = [$operator, '='];
-        }
-
-        // if ($this->isRangeOperator($operator)) {
-        //     return $this->range($field, array_merge());
-        // }
-
-        // Todo: implement
-
-        $this->bool($boolQuery);
+        $this->query->from($index->searchableAs(), $index->getType());
 
         return $this;
     }
 
     /**
-     * Prepare the value and operator for a where clause.
+     * Get a base query builder instance.
      *
-     * @param  string  $value
-     * @param  string  $operator
-     * @param  bool  $useDefault
-     * @throws \InvalidArgumentException
-     * @return array
+     * @return \Illuminate\Database\Query\Builder
      */
-    public function prepareValueAndOperator($value, $operator, $useDefault = false)
+    public function toBase()
     {
-        if ($useDefault) {
-            return [$operator, '='];
-        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
-            throw new InvalidArgumentException('Illegal operator and value combination.');
-        }
-
-        return [$value, $this->transformOperator($operator)];
+        return $this->applyScopes()->getQuery();
     }
 
     /**
-     * Transform operator to supported format.
+     * Call the given local model scopes.
      *
-     * @param  string $operator
-     * @return string
+     * @param  array  $scopes
+     * @return static|mixed
      */
-    protected function transformOperator($operator)
+    public function scopes(array $scopes)
     {
-        $maps = [
-            'lt' => '>',
-            'gt' => '<',
-            'lte' => '<=',
-            'gte' => '>=',
-        ];
+        $builder = $this;
 
-        foreach ($maps as $value => $alias) {
-            if ($alias === $operator) {
-                return $value;
+        foreach ($scopes as $scope => $parameters) {
+            // If the scope key is an integer, then the scope was passed as the value and
+            // the parameter list is empty, so we will format the scope name and these
+            // parameters here. Then, we'll be ready to call the scope on the model.
+            if (is_int($scope)) {
+                [$scope, $parameters] = [$parameters, []];
             }
+
+            // Next we'll pass the scope callback to the callScope method which will take
+            // care of grouping the "wheres" properly so the logical order doesn't get
+            // messed up when adding scopes. Then we'll return back out the builder.
+            $builder = $builder->callScope(
+                [$this->model, 'scope'.ucfirst($scope)],
+                (array) $parameters
+            );
         }
 
-        return $operator;
+        return $builder;
     }
 
     /**
-     * Determine if the given operator and value combination is legal.
+     * Apply the scopes to the Eloquent builder instance and return it.
      *
-     * Prevents using Null values with invalid operators.
-     *
-     * @param  string  $operator
-     * @param  mixed  $value
-     * @return bool
+     * @return static
      */
-    protected function invalidOperatorAndValue($operator, $value)
+    public function applyScopes()
     {
-        return is_null($value) && in_array($operator, $this->operators) &&
-             ! in_array($operator, ['=', '<>', '!=']);
-    }
-
-    /**
-     * Determine if the given operator is supported.
-     *
-     * @param  string  $operator
-     * @return bool
-     */
-    protected function invalidOperator($operator)
-    {
-        return ! in_array(strtolower($operator), $this->operators, true);
-    }
-
-    /**
-     * Determine if the given operator is range.
-     *
-     * @param  string  $operator
-     * @return bool
-     */
-    protected function isRangeOperator($operator)
-    {
-        return in_array(strtolower($operator), [
-            'lt', 'gt', 'lte', 'gte',
-        ], true);
-    }
-
-    /**
-     * Add an "or where" clause to the query.
-     *
-     * @param  string|array|\Closure $field
-     * @param  mixed $operator
-     * @param  mixed $value
-     * @return $this
-     */
-    public function orWhere($field, $operator = null, $value = null)
-    {
-        [$value, $operator] = $this->prepareValueAndOperator(
-            $value,
-            $operator,
-            func_num_args() === 2
-        );
-
-        return $this->where($field, $operator, $value, BoolQuery::SHOULD);
-    }
-
-    /**
-     * Add a "where in" clause to the query.
-     *
-     * @param  string $column
-     * @param  mixed $values
-     * @param  array $parameters
-     * @return $this
-     */
-    public function whereIn($field, $values, array $parameters = [], $not = false)
-    {
-        // Next, if the value is Arrayable we need to cast it to its raw array form so we
-        // have the underlying array value instead of an Arrayable object which is not
-        // able to be added as a binding, etc. We will then add to the wheres array.
-        if ($values instanceof Arrayable) {
-            $values = $values->toArray();
+        if (! $this->scopes) {
+            return $this;
         }
 
-        $boolQuery = $not ? BoolQuery::MUST : BoolQuery::MUST_NOT;
+        $builder = clone $this;
 
-        return $this->bool($boolQuery)->terms($field, $values, $parameters);
-    }
+        foreach ($this->scopes as $identifier => $scope) {
+            if (! isset($builder->scopes[$identifier])) {
+                continue;
+            }
 
-    /**
-     * Add a "where not in" clause to the query.
-     *
-     * @param  string $field
-     * @param  mixed $values
-     * @param  array $parameters
-     * @return $this
-     */
-    public function whereNotIn($field, $values, array $parameters = [])
-    {
-        return $this->whereIn($field, $values, $parameters, true);
-    }
+            $builder->callScope(function (Builder $builder) use ($scope) {
+                // If the scope is a Closure we will just go ahead and call the scope with the
+                // builder instance. The "callScope" method will properly group the clauses
+                // that are added to this query so "where" clauses maintain proper logic.
+                if ($scope instanceof Closure) {
+                    $scope($builder);
+                }
 
-    /**
-     * Add a where clause on the primary key to the query.
-     *
-     * @param  mixed $id
-     * @param  string|null $type
-     * @return $this
-     */
-    public function whereKey($id, $type = null)
-    {
-        if ($id instanceof Arrayable) {
-            $id = $id->toArray();
+                // If the scope is a scope object, we will call the apply method on this scope
+                // passing in the builder and the model instance. After we run all of these
+                // scopes we will return back the builder instance to the outside caller.
+                if ($scope instanceof Scope) {
+                    $scope->apply($builder);
+                }
+            });
         }
 
-        $this->append(new IdsQuery(
-            (array) $id,
-            array_filter(compact('type'))
-        ));
-
-        return $this;
+        return $builder;
     }
 
     /**
-     * Set the "from" value of the query.
+     * Apply the given scope on the current builder instance.
      *
-     * @param  int  $value
-     * @return $this
-     */
-    public function from(int $offset)
-    {
-        $this->query->setFrom($offset);
-
-        return $this;
-    }
-
-    /**
-     * Alias to set the "from" value of the query.
-     *
-     * @param  int  $value
-     * @return $this
-     */
-    public function skip(int $offset)
-    {
-        return $this->from($offset);
-    }
-
-    /**
-     * Alias to set the "limit" value of the query.
-     *
-     * @param  int  $value
-     * @return $this
-     */
-    public function take(int $limit)
-    {
-        return $this->limit($limit);
-    }
-
-    /**
-     * Set the "size" value of the query.
-     *
-     * @param  int  $value
-     * @return $this
-     */
-    public function limit(int $limit)
-    {
-        $this->query->setSize($limit);
-
-        return $this;
-    }
-
-    /**
-     * Alias to set sort value of the query.
-     *
-     * @param  string|array $fields
-     * @param  string|null $order
-     * @param  array $parameters
-     * @return $this
-     */
-    public function orderBy($fields, $order = null, array $parameters = [])
-    {
-        return $this->sortBy($fields, $order, $parameters);
-    }
-
-    /**
-     * Set the query sort values values.
-     *
-     * @param  string|array $fields
-     * @param  string|null $order
-     * @param  array $parameters
-     * @return $this
-     */
-    public function sortBy($fields, $order = null, array $parameters = [])
-    {
-        $fields = is_array($fields) ? $fields : [$fields];
-
-        foreach ($fields as $field) {
-            $this->query->addSort(new FieldSort($field, $order, $parameters));
-        }
-
-        return $this;
-    }
-
-    /**
-     * Set bool query operation.
-     *
-     * @param  string $bool
-     * @return $this
-     */
-    public function bool($bool)
-    {
-        $this->boolQuery = $this->prepareBoolQuery($bool);
-
-        return $this;
-    }
-
-    /**
-     * Switch to a should statement.
-     *
-     * @return $this
-     */
-    public function should()
-    {
-        $this->boolQuery = BoolQuery::SHOULD;
-
-        return $this;
-    }
-
-    /**
-     * Switch to a must statement.
-     *
-     * @return $this
-     */
-    public function must()
-    {
-        $this->boolQuery = BoolQuery::MUST;
-
-        return $this;
-    }
-
-    /**
-     * Switch to a must not statement.
-     *
-     * @return $this
-     */
-    public function mustNot()
-    {
-        $this->boolQuery = BoolQuery::MUST_NOT;
-
-        return $this;
-    }
-
-    /**
-     * Switch to a filter query.
-     */
-    public function filter()
-    {
-        $this->boolQuery = BoolQuery::FILTER;
-
-        return $this;
-    }
-
-    /**
-     * Add an term query.
-     *
-     * @param  string $field
-     * @param  string $terms
-     * @param  array $parameters
-     * @return $this
-     */
-    public function term($field, $term, array $parameters = [])
-    {
-        $this->append(new TermQuery($field, $term, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add an terms query.
-     *
-     * @param  string $field
-     * @param  array $terms
-     * @param  array $parameters
-     * @return $this
-     */
-    public function terms($field, array $terms, array $parameters = [])
-    {
-        $this->append(new TermsQuery($field, $terms, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add an exists query.
-     *
-     * @param  string|array $fields
-     * @return $this
-     */
-    public function has($fields)
-    {
-        $fields = is_array($fields) ? $fields : [$fields];
-
-        foreach ($fields as $field) {
-            $query = new ExistsQuery($field);
-
-            $this->append($query);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Add a wildcard query.
-     *
-     * @param  string $field
-     * @param  string $value
-     * @param  array $parameters
-     * @return $this
-     */
-    public function wildcard($field, $value, array $parameters = [])
-    {
-        $this->append(new WildcardQuery($field, $value, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a match phrase query.
-     *
-     * @param  string $field
-     * @param  string $value
-     * @param  array $parameters
-     * @return $this
-     */
-    public function matchPhrase($field, $value, array $parameters = [])
-    {
-        $this->append(new MatchPhraseQuery($field, $value, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a boost query.
-     *
-     * @param  array $parameters
-     * @return $this
-     */
-    public function matchAll(array $parameters = [])
-    {
-        $this->append(new MatchAllQuery($parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a match query.
-     *
-     * @param  string $field
-     * @param  string $term
+     * @param  callable  $scope
      * @param  array  $parameters
-     * @return $this
-     */
-    public function match($field, $term, array $parameters = [])
-    {
-        $this->append(new MatchQuery($field, $term, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a multi match query.
-     *
-     * @param  array $fields
-     * @param  string $term
-     * @param  array $parameters
-     * @return $this
-     */
-    public function multiMatch(array $fields, $term, array $parameters = [])
-    {
-        $this->append(new MultiMatchQuery($fields, $term, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a geo bounding box query.
-     *
-     * @param  string $field
-     * @param  array $values
-     * @param  array $parameters
-     * @return $this
-     */
-    public function geoBoundingBox($field, $values, array $parameters = [])
-    {
-        $this->append(new GeoBoundingBoxQuery($field, $values, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a geo distance query.
-     *
-     * @param  string $field
-     * @param  string $distance
-     * @param  mixed $location
-     * @param  array $parameters
-     * @return $this
-     */
-    public function geoDistance($field, $distance, $location, array $parameters = [])
-    {
-        $this->append(new GeoDistanceQuery($field, $distance, $location, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a geo distance range query.
-     *
-     * @param  string $field
-     * @param  mixed $from
-     * @param  mixed $to
-     * @param  mixed $location
-     * @param  array $parameters
-     * @return $this
-     */
-    public function geoDistanceRange($field, $from, $to, array $location, array $parameters = [])
-    {
-        $range = compact('from', 'to');
-
-        $this->append(new GeoDistanceRangeQuery($field, $range, $location, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a geo polygon query.
-     *
-     * @param  string $field
-     * @param  array $points
-     * @param  array $parameters
-     * @return $this
-     */
-    public function geoPolygon($field, array $points = [], array $parameters = [])
-    {
-        $query = new GeoPolygonQuery($field, $points, $parameters);
-
-        $this->append($query);
-
-        return $this;
-    }
-
-    /**
-     * Add a geo shape query.
-     *
-     * @param  string $field
-     * @param  string $type
-     * @param  array $coordinates
-     * @param  array $parameters
-     * @return $this
-     */
-    public function geoShape($field, $type, array $coordinates = [], array $parameters = [])
-    {
-        $query = new GeoShapeQuery();
-
-        $query->addShape($field, $type, $coordinates, $parameters);
-
-        $this->append($query);
-
-        return $this;
-    }
-
-    /**
-     * Add a prefix query.
-     *
-     * @param  string $field
-     * @param  string $term
-     * @param  array $parameters
-     * @return $this
-     */
-    public function prefix($field, $term, array $parameters = [])
-    {
-        $this->append(new PrefixQuery($field, $term, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a query string query.
-     *
-     * @param  string $query
-     * @param  array $parameters
-     * @return $this
-     */
-    public function queryString($query, array $parameters = [])
-    {
-        $this->append(new QueryStringQuery($query, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a simple query string query.
-     *
-     * @param string $query
-     * @param array $parameters
-     * @return $this
-     */
-    public function simpleQueryString($query, array $parameters = [])
-    {
-        $this->append(new SimpleQueryStringQuery($query, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a highlight to result.
-     *
-     * @param  array $fields
-     * @param  array $parameters
-     * @param  string|array $preTag
-     * @param  string|array $postTag
-     * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-highlighting.html
-     * @return $this
-     */
-    public function highlight($fields = ['_all' => []], $parameters = [], $preTag = '<mark>', $postTag = '</mark>')
-    {
-        $highlight = new Highlight;
-        $highlight->setTags((array) $preTag, (array) $postTag);
-
-        foreach ($fields as $field => $fieldParams) {
-            $highlight->addField($field, $fieldParams);
-        }
-
-        if ($parameters) {
-            $highlight->setParameters($parameters);
-        }
-
-        $this->query->addHighlight($highlight);
-
-        return $this;
-    }
-
-    /**
-     * Add a range query.
-     *
-     * @param  string $field
-     * @param  array  $parameters
-     * @return $this
-     */
-    public function range($field, array $parameters = [])
-    {
-        $this->append(new RangeQuery($field, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a regexp query.
-     *
-     * @param  string $field
-     * @param  array  $parameters
-     * @return $this
-     */
-    public function regexp($field, $regex, array $parameters = [])
-    {
-        $this->append(new RegexpQuery($field, $regex, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a common term query.
-     *
-     * @param  string $field
-     * @param  string $term
-     * @param  array $parameters
-     * @return $this
-     */
-    public function commonTerm($field, $term, array $parameters = [])
-    {
-        $this->append(new CommonTermsQuery($field, $term, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a fuzzy query.
-     *
-     * @param  string $field
-     * @param  string $term
-     * @param  array $parameters
-     * @return $this
-     */
-    public function fuzzy($field, $term, array $parameters = [])
-    {
-        $this->append(new FuzzyQuery($field, $term, $parameters));
-
-        return $this;
-    }
-
-    /**
-     * Add a nested query.
-     *
-     * @param  srting $field
-     * @param  \Closure $closure
-     * @param  string $scoreMode
-     * @return $this
-     */
-    public function nested($field, Closure $closure, $scoreMode = 'avg')
-    {
-        $builder = $this->getIndex()->newQuery();
-
-        $closure($builder);
-
-        $nestedQuery = $builder->getQuery()->getQueries();
-
-        $query = new NestedQuery($field, $nestedQuery, ['score_mode' => $scoreMode]);
-
-        $this->append($query);
-
-        return $this;
-    }
-
-    /**
-     * Add aggregation.
-     *
-     * @param  \Closure $closure
-     * @return $this
-     */
-    public function aggregate(Closure $closure)
-    {
-        // $builder = new AggregationBuilder($this->query);
-
-        // $closure($builder);
-
-        return $this;
-    }
-
-    /**
-     * Set the limit and offset for a given page.
-     *
-     * @param  int  $page
-     * @param  int  $perPage
-     * @return $this|static
-     */
-    public function forPage($page, $perPage = 10)
-    {
-        return $this->skip(($page - 1) * $perPage)->take($perPage);
-    }
-
-    /**
-     * Return the DSL query.
-     *
-     * @return array
-     */
-    public function toDSL()
-    {
-        return $this->query->toArray();
-    }
-
-    /**
-     * Return the boolean query state.
-     *
-     * @return string
-     */
-    public function getBoolQuery()
-    {
-        return $this->boolQuery;
-    }
-
-    /**
-     * Determine if the given bool query operation is legal.
-     *
-     * @param  string $bool
-     * @throws \InvalidArgumentException
-     * @return string
-     */
-    protected function prepareBoolQuery($bool)
-    {
-        $reflect = new ReflectionClass(BoolQuery::class);
-
-        if (! in_array($bool, $reflect->getConstants())) {
-            throw new InvalidArgumentException('Illegal bool query operation.');
-        }
-
-        return $bool;
-    }
-
-    /**
-     * Append a query.
-     *
-     * @param  \ONGR\ElasticsearchDSL\BuilderInterface $query
-     * @return $this
-     */
-    public function append(BuilderInterface $query)
-    {
-        $this->query->addQuery($query, $this->getBoolQuery());
-
-        return $this;
-    }
-
-    /**
-     * Apply the callback's query changes if the given "value" is true.
-     *
-     * @param  mixed  $value
-     * @param  callable  $callback
-     * @param  callable  $default
-     * @return mixed|$this
-     */
-    public function when($value, $callback, $default = null)
-    {
-        if ($value) {
-            return $callback($this, $value) ?: $this;
-        } elseif ($default) {
-            return $default($this, $value) ?: $this;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Pass the query to a given callback.
-     *
-     * @param  \Closure  $callback
-     * @return $this
-     */
-    public function tap($callback)
-    {
-        return $this->when(true, $callback);
-    }
-
-    /**
-     * Apply the callback's query changes if the given "value" is false.
-     *
-     * @param  mixed  $value
-     * @param  callable  $callback
-     * @param  callable  $default
-     * @return mixed|$this
-     */
-    public function unless($value, $callback, $default = null)
-    {
-        if (! $value) {
-            return $callback($this, $value) ?: $this;
-        } elseif ($default) {
-            return $default($this, $value) ?: $this;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Find a document by its primary key.
-     *
-     * @param  mixed $id
-     * @param  string|null $type
      * @return mixed
      */
-    public function find($id, $type = null)
+    protected function callScope(callable $scope, $parameters = [])
     {
-        if (is_array($id) || $id instanceof Arrayable) {
-            return $this->findMany($id, $type);
-        }
+        array_unshift($parameters, $this);
 
-        return $this->whereKey($id, $type)->first();
-    }
-
-    /**
-     * Find multiple documents by their primary key.
-     *
-     * @param  \Illuminate\Contracts\Support\Arrayable|array $ids
-     * @param  string|null $type
-     * @return \Jenky\LaravelElasticsearch\Storage\Response
-     */
-    public function findMany($ids, $type = null)
-    {
-        if (! empty($ids)) {
-            $this->whereKey($ids, $type);
-        }
-
-        return $this->get();
-    }
-
-    /**
-     * Execute the query and get the first result.
-     *
-     * @return \Jenky\LaravelElasticsearch\Storage\Document|array
-     */
-    public function first()
-    {
-        return $this->limit(1)->get()->first();
+        return $scope(...array_values($parameters)) ?? $this;
     }
 
     /**
@@ -1007,39 +278,50 @@ class Builder
      *
      * @return \Jenky\LaravelElasticsearch\Storage\Response
      */
-    public function get($perPage = null, $pageName = 'page', $page = null): Response
+    public function get($perPage = 10, $pageName = 'page', $page = null)
     {
-        $index = $this->getIndex();
-        $page = $page ?: Paginator::resolveCurrentPage($pageName);
-
-        $perPage = $perPage ?: $index->getPerPage();
-
-        $results = $this->search(
-            $this->forPage($page, $perPage)->toDSL()
+        return $this->toBase()->get(
+            $perPage ?: $this->getIndex()->getPerPage(),
+            $pageName,
+            $page
         );
-
-        // if ($documentClass = $index->getDocument()) {
-        //     $results['hits']['hits'] = Collection::make($results['hits']['hits'] ?? [])
-        //         ->mapInto($documentClass);
-        // }
-
-        return Response::make($results, $perPage, $page, [
-            'path' => Paginator::resolveCurrentPath(),
-            'pageName' => $pageName,
-        ]);
     }
 
     /**
-     * Perform the search by using search API.
+     * Dynamically handle calls into the query instance.
      *
-     * @param  array $params
-     * @return array
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
      */
-    public function search(array $params = [])
+    public function __call($method, $parameters)
     {
-        return $this->getIndex()->getConnection()->search([
-            'index' => $this->getIndex()->searchableAs(),
-            'body' => $params,
-        ]);
+        if ($method === 'macro') {
+            $this->localMacros[$parameters[0]] = $parameters[1];
+
+            return;
+        }
+
+        if (isset($this->localMacros[$method])) {
+            array_unshift($parameters, $this);
+
+            return $this->localMacros[$method](...$parameters);
+        }
+
+        if (static::hasMacro($method)) {
+            return $this->macroCall($method, $parameters);
+        }
+
+        if (method_exists($this->index, $scope = 'scope'.ucfirst($method))) {
+            return $this->callScope([$this->index, $scope], $parameters);
+        }
+
+        if (in_array($method, $this->passthru)) {
+            return $this->toBase()->{$method}(...$parameters);
+        }
+
+        $this->forwardCallTo($this->query, $method, $parameters);
+
+        return $this;
     }
 }

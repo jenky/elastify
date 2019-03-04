@@ -3,8 +3,9 @@
 namespace Jenky\LaravelElasticsearch\Storage;
 
 use Illuminate\Pagination\LengthAwarePaginator;
+use Jenky\LaravelElasticsearch\Contracts\Paginator;
 
-class Response extends LengthAwarePaginator
+class Response extends LengthAwarePaginator implements Paginator
 {
     /**
      * @var array
@@ -14,21 +15,21 @@ class Response extends LengthAwarePaginator
     /**
      * Create elasticsearch response instance.
      *
-     * @param  array $raw
+     * @param  mixed $items
      * @param  int $perPage
      * @param  int $currentPage
      * @param  array $options
      * @return void
      */
-    public function __construct(array $raw = [], int $perPage = 10, $page, array $options = [])
+    public function __construct($items, int $perPage = 10, $currentPage, array $options = [])
     {
-        $this->raw = $raw;
+        $this->raw = $items;
 
         return parent::__construct(
-            $raw['hits']['hits'] ?? [],
-            $raw['hits']['total'] ?? 0,
+            $items['hits']['hits'] ?? [],
+            $items['hits']['total'] ?? 0,
             $perPage,
-            $page,
+            $currentPage,
             $options
         );
     }

@@ -116,7 +116,7 @@ class Factory implements ClientFactory
                 break;
 
             case 'logger':
-                $client->setLogger($this->container['log']->channel($Arr::get($config, 'channel')));
+                $client->setLogger($this->container['log']->channel(Arr::get($config, 'channel')));
                 break;
 
             default:

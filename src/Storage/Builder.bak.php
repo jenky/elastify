@@ -1,18 +1,12 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Builder;
+namespace Jenky\LaravelElasticsearch\Storage;
 
 use Closure;
-use Illuminate\Container\Container;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Str;
-use Illuminate\Support\Traits\ForwardsCalls;
-use Illuminate\Support\Traits\Macroable;
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
-use Jenky\LaravelElasticsearch\Concerns\BuildsQueries;
-use Jenky\LaravelElasticsearch\Contracts\ConnectionInterface;
-use Jenky\LaravelElasticsearch\Storage\Response;
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
@@ -24,6 +18,7 @@ use ONGR\ElasticsearchDSL\Query\FullText\QueryStringQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\SimpleQueryStringQuery;
 use ONGR\ElasticsearchDSL\Query\Geo\GeoBoundingBoxQuery;
 use ONGR\ElasticsearchDSL\Query\Geo\GeoDistanceQuery;
+use ONGR\ElasticsearchDSL\Query\Geo\GeoDistanceRangeQuery;
 use ONGR\ElasticsearchDSL\Query\Geo\GeoPolygonQuery;
 use ONGR\ElasticsearchDSL\Query\Geo\GeoShapeQuery;
 use ONGR\ElasticsearchDSL\Query\Joining\NestedQuery;
@@ -33,7 +28,6 @@ use ONGR\ElasticsearchDSL\Query\TermLevel\FuzzyQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\IdsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\PrefixQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\RangeQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\RegexpQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\WildcardQuery;
@@ -41,37 +35,21 @@ use ONGR\ElasticsearchDSL\Search;
 use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use ReflectionClass;
 
-class Query
+class Builder
 {
-    use BuildsQueries, ForwardsCalls, Macroable {
-        __call as macroCall;
-    }
-
     /**
-     * @var \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
-     */
-    protected $connection;
-
-    /**
-     * The indices/aliases which the query is targeting.
-     *
-     * @var string
-     */
-    protected $from;
-
-    /**
-     * The index default type.
-     *
-     * @var string
-     */
-    protected $type;
-
-    /**
-     * The DSL query builder.
+     * The base query builder instance.
      *
      * @var \ONGR\ElasticsearchDSL\Search
      */
     protected $query;
+
+    /**
+     * The model being queried.
+     *
+     * @var \Jenky\LaravelElasticsearch\Storage\Index
+     */
+    protected $index;
 
     /**
      * Query bool state.
@@ -96,26 +74,14 @@ class Query
     ];
 
     /**
-     * Create a new query builder instance.
+     * Create a new Eloquent query builder instance.
      *
-     * @param  \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface $connection
-     * @param  \ONGR\ElasticsearchDSL\Search $query
+     * @param  \ONGR\ElasticsearchDSL\Search  $query
      * @return void
      */
-    public function __construct(ConnectionInterface $connection, Search $query = null)
+    public function __construct(Search $query)
     {
-        $this->connection = $connection;
-        $this->query = $query ?: $connection->getQueryGrammar();
-    }
-
-    /**
-     * Get the ealsticsearch connection instance.
-     *
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
-     */
-    public function getConnection()
-    {
-        return $this->connection;
+        $this->query = $query;
     }
 
     /**
@@ -134,7 +100,7 @@ class Query
      * @param  \ONGR\ElasticsearchDSL\Search  $query
      * @return $this
      */
-    public function setQuery(Search $query)
+    public function setQuery($query)
     {
         $this->query = $query;
 
@@ -142,145 +108,26 @@ class Query
     }
 
     /**
-     * Set the indices/aliases which the query is targeting.
+     * Get the index instance being queried.
      *
-     * @param  string $from
-     * @param  string|null $type
+     * @return \Jenky\LaravelElasticsearch\Storage\Index|static
+     */
+    public function getIndex()
+    {
+        return $this->index;
+    }
+
+    /**
+     * Set a index instance for the index being queried.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Storage\Index  $index
      * @return $this
      */
-    public function from($from, $type = null)
+    public function setIndex(Index $index)
     {
-        $this->from = $from;
-
-        if ($type) {
-            $this->type($type);
-        }
+        $this->index = $index;
 
         return $this;
-    }
-
-    /**
-     * Set the index type.
-     *
-     * @param  string $type
-     * @return $this
-     */
-    public function type($type)
-    {
-        $this->type = $type;
-
-        return $this;
-    }
-
-    /**
-     * Check if whether indices/aliases with/without type are exists.
-     *
-     * @return bool
-     */
-    public function indexExists()
-    {
-        return $this->getConnection()->indices()->exists(array_filter([
-            'index' => $this->from,
-            'type' => $this->type,
-        ]));
-    }
-
-    /**
-     * Create a new index.
-     *
-     * @param  array $params
-     * @return array
-     */
-    public function create(array $params)
-    {
-        $data = [
-            'index' => $this->from,
-            'body' => $params,
-        ];
-
-        return $this->getConnection()->indices()->create($data);
-    }
-
-    /**
-     * Create a new index if not exists.
-     *
-     * @param  array $params
-     * @return void
-     */
-    public function createIfNotExists(array $params)
-    {
-        if (! $this->fromExists()) {
-            $this->create($params);
-        }
-    }
-
-    /**
-     * Delete an index.
-     *
-     * @return array
-     */
-    public function drop()
-    {
-        return $this->getConnection()->indices()->delete([
-            'index' => $this->from,
-        ]);
-    }
-
-    /**
-     * Delete an existing index.
-     *
-     * @return void
-     */
-    public function dropIfExists()
-    {
-        if ($this->fromExists()) {
-            $this->drop();
-        }
-    }
-
-    /**
-     * Index a signle document.
-     *
-     * @param  array $params
-     * @return array
-     */
-    public function insert(array $params)
-    {
-        return $this->getConnection()->index(array_filter([
-            'index' => $this->from,
-            'type' => $this->type,
-            'body' => $params,
-        ]));
-    }
-
-    /**
-     * Flush the index.
-     *
-     * @return array
-     */
-    public function flush()
-    {
-        return $this->getConnection()
-            ->indices()
-            ->flush(array_filter([
-                'index' => $this->from,
-                'type' => $this->type,
-            ]));
-    }
-
-    /**
-     * Perform the search by using search API.
-     *
-     * @param  array $params
-     * @return array
-     */
-    public function search(array $params = [])
-    {
-        return $this->getConnection()->search(array_filter([
-            'index' => $this->from,
-            'type' => $this->type,
-            'body' => $params,
-        ]));
     }
 
     /**
@@ -478,7 +325,9 @@ class Query
             $id = $id->toArray();
         }
 
-        return $this->append(new IdsQuery(
+        $this->append(new IdsQuery(
+            (array) $id,
+            array_filter(compact('type'))
         ));
 
         return $this;
@@ -490,7 +339,7 @@ class Query
      * @param  int  $value
      * @return $this
      */
-    public function offset(int $offset)
+    public function from(int $offset)
     {
         $this->query->setFrom($offset);
 
@@ -505,7 +354,7 @@ class Query
      */
     public function skip(int $offset)
     {
-        return $this->offset($offset);
+        return $this->from($offset);
     }
 
     /**
@@ -633,7 +482,9 @@ class Query
      */
     public function term($field, $term, array $parameters = [])
     {
-        return $this->append(new TermQuery($field, $term, $parameters));
+        $this->append(new TermQuery($field, $term, $parameters));
+
+        return $this;
     }
 
     /**
@@ -646,22 +497,20 @@ class Query
      */
     public function terms($field, array $terms, array $parameters = [])
     {
-        return $this->append(new TermsQuery($field, $terms, $parameters));
+        $this->append(new TermsQuery($field, $terms, $parameters));
+
+        return $this;
     }
 
     /**
      * Add an exists query.
      *
-     * @param  null|string|array $fields
+     * @param  string|array $fields
      * @return $this
      */
-    public function exists($fields = null)
+    public function has($fields)
     {
-        if (is_null($fields)) {
-            return $this->fromExists();
-        }
-
-        $fields = is_array($fields) ? $fields : func_get_args();
+        $fields = is_array($fields) ? $fields : [$fields];
 
         foreach ($fields as $field) {
             $query = new ExistsQuery($field);
@@ -682,7 +531,9 @@ class Query
      */
     public function wildcard($field, $value, array $parameters = [])
     {
-        return $this->append(new WildcardQuery($field, $value, $parameters));
+        $this->append(new WildcardQuery($field, $value, $parameters));
+
+        return $this;
     }
 
     /**
@@ -695,7 +546,9 @@ class Query
      */
     public function matchPhrase($field, $value, array $parameters = [])
     {
-        return $this->append(new MatchPhraseQuery($field, $value, $parameters));
+        $this->append(new MatchPhraseQuery($field, $value, $parameters));
+
+        return $this;
     }
 
     /**
@@ -706,7 +559,9 @@ class Query
      */
     public function matchAll(array $parameters = [])
     {
-        return $this->append(new MatchAllQuery($parameters));
+        $this->append(new MatchAllQuery($parameters));
+
+        return $this;
     }
 
     /**
@@ -719,7 +574,9 @@ class Query
      */
     public function match($field, $term, array $parameters = [])
     {
-        return $this->append(new MatchQuery($field, $term, $parameters));
+        $this->append(new MatchQuery($field, $term, $parameters));
+
+        return $this;
     }
 
     /**
@@ -732,7 +589,9 @@ class Query
      */
     public function multiMatch(array $fields, $term, array $parameters = [])
     {
-        return $this->append(new MultiMatchQuery($fields, $term, $parameters));
+        $this->append(new MultiMatchQuery($fields, $term, $parameters));
+
+        return $this;
     }
 
     /**
@@ -745,7 +604,9 @@ class Query
      */
     public function geoBoundingBox($field, $values, array $parameters = [])
     {
-        return $this->append(new GeoBoundingBoxQuery($field, $values, $parameters));
+        $this->append(new GeoBoundingBoxQuery($field, $values, $parameters));
+
+        return $this;
     }
 
     /**
@@ -759,7 +620,9 @@ class Query
      */
     public function geoDistance($field, $distance, $location, array $parameters = [])
     {
-        return $this->append(new GeoDistanceQuery($field, $distance, $location, $parameters));
+        $this->append(new GeoDistanceQuery($field, $distance, $location, $parameters));
+
+        return $this;
     }
 
     /**
@@ -772,11 +635,13 @@ class Query
      * @param  array $parameters
      * @return $this
      */
-    public function geoDistanceRange($field, $from, $to, $location, array $parameters = [])
+    public function geoDistanceRange($field, $from, $to, array $location, array $parameters = [])
     {
         $range = compact('from', 'to');
 
-        return $this->append(new GeoDistanceQuery($field, $range, $location, $parameters));
+        $this->append(new GeoDistanceRangeQuery($field, $range, $location, $parameters));
+
+        return $this;
     }
 
     /**
@@ -791,7 +656,9 @@ class Query
     {
         $query = new GeoPolygonQuery($field, $points, $parameters);
 
-        return $this->append($query);
+        $this->append($query);
+
+        return $this;
     }
 
     /**
@@ -805,11 +672,13 @@ class Query
      */
     public function geoShape($field, $type, array $coordinates = [], array $parameters = [])
     {
-        $query = new GeoShapeQuery;
+        $query = new GeoShapeQuery();
 
         $query->addShape($field, $type, $coordinates, $parameters);
 
-        return $this->append($query);
+        $this->append($query);
+
+        return $this;
     }
 
     /**
@@ -822,7 +691,9 @@ class Query
      */
     public function prefix($field, $term, array $parameters = [])
     {
-        return $this->append(new PrefixQuery($field, $term, $parameters));
+        $this->append(new PrefixQuery($field, $term, $parameters));
+
+        return $this;
     }
 
     /**
@@ -834,7 +705,9 @@ class Query
      */
     public function queryString($query, array $parameters = [])
     {
-        return $this->append(new QueryStringQuery($query, $parameters));
+        $this->append(new QueryStringQuery($query, $parameters));
+
+        return $this;
     }
 
     /**
@@ -846,7 +719,9 @@ class Query
      */
     public function simpleQueryString($query, array $parameters = [])
     {
-        return $this->append(new SimpleQueryStringQuery($query, $parameters));
+        $this->append(new SimpleQueryStringQuery($query, $parameters));
+
+        return $this;
     }
 
     /**
@@ -886,7 +761,9 @@ class Query
      */
     public function range($field, array $parameters = [])
     {
-        return $this->append(new RangeQuery($field, $parameters));
+        $this->append(new RangeQuery($field, $parameters));
+
+        return $this;
     }
 
     /**
@@ -898,7 +775,9 @@ class Query
      */
     public function regexp($field, $regex, array $parameters = [])
     {
-        return $this->append(new RegexpQuery($field, $regex, $parameters));
+        $this->append(new RegexpQuery($field, $regex, $parameters));
+
+        return $this;
     }
 
     /**
@@ -911,7 +790,9 @@ class Query
      */
     public function commonTerm($field, $term, array $parameters = [])
     {
-        return $this->append(new CommonTermsQuery($field, $term, $parameters));
+        $this->append(new CommonTermsQuery($field, $term, $parameters));
+
+        return $this;
     }
 
     /**
@@ -924,7 +805,9 @@ class Query
      */
     public function fuzzy($field, $term, array $parameters = [])
     {
-        return $this->append(new FuzzyQuery($field, $term, $parameters));
+        $this->append(new FuzzyQuery($field, $term, $parameters));
+
+        return $this;
     }
 
     /**
@@ -945,46 +828,24 @@ class Query
 
         $query = new NestedQuery($field, $nestedQuery, ['score_mode' => $scoreMode]);
 
-        return $this->append($query);
-    }
-
-    /**
-     * Add aggregation.
-     *
-     * @param \Closure $closure
-     * @return $this
-     */
-    public function aggregate(Closure $closure)
-    {
-        $builder = new Aggregation($this->query);
-
-        $closure($builder);
+        $this->append($query);
 
         return $this;
     }
 
     /**
-     * Retrieve the average of the values of a given column.
+     * Add aggregation.
      *
-     * @param  string  $column
-     * @return mixed
+     * @param  \Closure $closure
+     * @return $this
      */
-    public function avg($field, $name = null)
+    public function aggregate(Closure $closure)
     {
-        $name = $name ?: 'average_'.$field;
+        // $builder = new AggregationBuilder($this->query);
 
-        return $this->aggregate(__FUNCTION__, [$column]);
-    }
+        // $closure($builder);
 
-    /**
-     * Alias for the "avg" method.
-     *
-     * @param  string  $column
-     * @return mixed
-     */
-    public function average($column)
-    {
-        return $this->avg($column);
+        return $this;
     }
 
     /**
@@ -1051,6 +912,55 @@ class Query
     }
 
     /**
+     * Apply the callback's query changes if the given "value" is true.
+     *
+     * @param  mixed  $value
+     * @param  callable  $callback
+     * @param  callable  $default
+     * @return mixed|$this
+     */
+    public function when($value, $callback, $default = null)
+    {
+        if ($value) {
+            return $callback($this, $value) ?: $this;
+        } elseif ($default) {
+            return $default($this, $value) ?: $this;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Pass the query to a given callback.
+     *
+     * @param  \Closure  $callback
+     * @return $this
+     */
+    public function tap($callback)
+    {
+        return $this->when(true, $callback);
+    }
+
+    /**
+     * Apply the callback's query changes if the given "value" is false.
+     *
+     * @param  mixed  $value
+     * @param  callable  $callback
+     * @param  callable  $default
+     * @return mixed|$this
+     */
+    public function unless($value, $callback, $default = null)
+    {
+        if (! $value) {
+            return $callback($this, $value) ?: $this;
+        } elseif ($default) {
+            return $default($this, $value) ?: $this;
+        }
+
+        return $this;
+    }
+
+    /**
      * Find a document by its primary key.
      *
      * @param  mixed $id
@@ -1097,57 +1007,39 @@ class Query
      *
      * @return \Jenky\LaravelElasticsearch\Storage\Response
      */
-    public function get($perPage = 10, $pageName = 'page', $page = null): Response
+    public function get($perPage = null, $pageName = 'page', $page = null): Response
     {
+        $index = $this->getIndex();
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
+
+        $perPage = $perPage ?: $index->getPerPage();
 
         $results = $this->search(
             $this->forPage($page, $perPage)->toDSL()
         );
 
-        return $this->paginator(
-            $results, $perPage, $page, [
-                'path' => Paginator::resolveCurrentPath(),
-                'pageName' => $pageName,
-            ]
-        );
-    }
-
-    /**
-     * Create a new length-aware paginator instance.
-     *
-     * @param  \Illuminate\Support\Collection  $items
-     * @param  int  $total
-     * @param  int  $perPage
-     * @param  int  $currentPage
-     * @param  array  $options
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
-    protected function paginator($items, $perPage, $currentPage, $options)
-    {
-        return Container::getInstance()->makeWith(Response::class, compact(
-            'items', 'perPage', 'currentPage', 'options'
-        ));
-    }
-
-    /**
-     * Handle dynamic method calls into the method.
-     *
-     * @param  string  $method
-     * @param  array   $parameters
-     * @throws \BadMethodCallException
-     * @return mixed
-     */
-    public function __call($method, $parameters)
-    {
-        if (static::hasMacro($method)) {
-            return $this->macroCall($method, $parameters);
-        }
-
-        // if (Str::startsWith($method, 'where')) {
-        //     return $this->dynamicWhere($method, $parameters);
+        // if ($documentClass = $index->getDocument()) {
+        //     $results['hits']['hits'] = Collection::make($results['hits']['hits'] ?? [])
+        //         ->mapInto($documentClass);
         // }
 
-        static::throwBadMethodCallException($method);
+        return Response::make($results, $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
+        ]);
+    }
+
+    /**
+     * Perform the search by using search API.
+     *
+     * @param  array $params
+     * @return array
+     */
+    public function search(array $params = [])
+    {
+        return $this->getIndex()->getConnection()->search([
+            'index' => $this->getIndex()->searchableAs(),
+            'body' => $params,
+        ]);
     }
 }

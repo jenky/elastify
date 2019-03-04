@@ -2,6 +2,7 @@
 
 namespace Jenky\LaravelElasticsearch\Storage;
 
+use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
@@ -46,6 +47,13 @@ abstract class Index
      * @var bool
      */
     protected static $exists;
+
+    /**
+     * The array of global scopes on the model.
+     *
+     * @var array
+     */
+    protected static $globalScopes = [];
 
     /**
      * The document class.
@@ -337,24 +345,142 @@ abstract class Index
     }
 
     /**
-     * Get a new query builder for the index.
+     * Get a new query builder for the model's table.
      *
      * @return \Jenky\LaravelElasticsearch\Storage\Builder
      */
-    public function newQuery(): Builder
+    public function newQuery()
     {
-        return (new Builder($this->newBaseQuery()))
-            ->setIndex($this);
+        return $this->registerGlobalScopes($this->newQueryWithoutScopes());
     }
 
     /**
-     * Create new base query.
+     * Get a new query builder that doesn't have any global scopes or eager loading.
      *
-     * @return \ONGR\ElasticsearchDSL\Search
+     * @return \Illuminate\Database\Eloquent\Builder|static
      */
-    public function newBaseQuery(): Search
+    public function newIndexQuery()
     {
-        return new Search;
+        return $this->newBuilder(
+            $this->newBaseQueryBuilder()
+        )->setIndex($this);
+    }
+
+    /**
+     * Register the global scopes for this builder instance.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Storage\Builder  $builder
+     * @return \Jenky\LaravelElasticsearch\Storage\Builder
+     */
+    public function registerGlobalScopes($builder)
+    {
+        foreach ($this->getGlobalScopes() as $identifier => $scope) {
+            $builder->withGlobalScope($identifier, $scope);
+        }
+
+        return $builder;
+    }
+
+    /**
+     * Get a new query builder that doesn't have any global scopes.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function newQueryWithoutScopes()
+    {
+        return $this->newIndexQuery();
+    }
+
+    /**
+     * Get a new query instance without a given scope.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|string  $scope
+     * @return \Jenky\LaravelElasticsearch\Storage\Builder
+     */
+    public function newQueryWithoutScope($scope)
+    {
+        return $this->newQuery()->withoutGlobalScope($scope);
+    }
+
+    /**
+     * Create a new query builder for the index.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Builder\Query  $query
+     * @return \Jenky\LaravelElasticsearch\Storage\Builder|static
+     */
+    public function newBuilder($query)
+    {
+        return new Builder($query);
+    }
+
+    /**
+     * Get a new query builder instance for the connection.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function newBaseQueryBuilder()
+    {
+        return $this->getConnection()->query();
+    }
+
+    /**
+     * Register a new global scope on the model.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|\Closure|string  $scope
+     * @param  \Closure|null  $implementation
+     * @return mixed
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function addGlobalScope($scope, Closure $implementation = null)
+    {
+        if (is_string($scope) && ! is_null($implementation)) {
+            return static::$globalScopes[static::class][$scope] = $implementation;
+        } elseif ($scope instanceof Closure) {
+            return static::$globalScopes[static::class][spl_object_hash($scope)] = $scope;
+        } elseif ($scope instanceof Scope) {
+            return static::$globalScopes[static::class][get_class($scope)] = $scope;
+        }
+
+        throw new InvalidArgumentException('Global scope must be an instance of Closure or Scope.');
+    }
+
+    /**
+     * Determine if a model has a global scope.
+     *
+     * @param  \Illuminate\Database\Eloquent\Scope|string  $scope
+     * @return bool
+     */
+    public static function hasGlobalScope($scope)
+    {
+        return ! is_null(static::getGlobalScope($scope));
+    }
+
+    /**
+     * Get a global scope registered with the model.
+     *
+     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|string  $scope
+     * @return \Jenky\LaravelElasticsearch\Storage\Scope|\Closure|null
+     */
+    public static function getGlobalScope($scope)
+    {
+        if (is_string($scope)) {
+            return Arr::get(static::$globalScopes, static::class.'.'.$scope);
+        }
+
+        return Arr::get(
+            static::$globalScopes, static::class.'.'.get_class($scope)
+        );
+    }
+
+    /**
+     * Get the global scopes for this class instance.
+     *
+     * @return array
+     */
+    public function getGlobalScopes()
+    {
+        return Arr::get(static::$globalScopes, static::class, []);
     }
 
     /**
@@ -366,9 +492,9 @@ abstract class Index
      */
     public function __call($method, $parameters)
     {
-        if (in_array($method, ['create', 'update', 'delete', 'flush', 'exists'])) {
-            return $this->{$method}(...$parameters);
-        }
+        // if (in_array($method, ['create', 'update', 'delete', 'flush', 'exists'])) {
+        //     return $this->{$method}(...$parameters);
+        // }
 
         return $this->forwardCallTo($this->newQuery(), $method, $parameters);
     }

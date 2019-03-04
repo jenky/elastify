@@ -49,7 +49,7 @@ class Connection implements ConnectionInterface
      */
     public function query()
     {
-        return new Query($this, $this->getQueryBuilder());;
+        return new Query($this, $this->getQueryGrammar());;
     }
 
     /**
@@ -57,7 +57,7 @@ class Connection implements ConnectionInterface
      *
      * @return \ONGR\ElasticsearchDSL\Search
      */
-    public function getQueryBuilder()
+    public function getQueryGrammar()
     {
         return new Search;
     }
