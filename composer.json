@@ -1,12 +1,14 @@
 {
-    "name": "jenky/laravel-elasticsearch",
+    "name": "jenky/elastify",
     "type": "library",
     "description": "Elasticsearch helper for laravel",
     "keywords": [
         "jenky",
+        "laravel",
+        "elasticsearch",
         "laravel-elasticsearch"
     ],
-    "homepage": "https://github.com/jenky/laravel-elasticsearch",
+    "homepage": "https://github.com/jenky/elastify",
     "license": "MIT",
     "authors": [
         {
@@ -27,12 +29,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Jenky\\LaravelElasticsearch\\": "src"
+            "Jenky\\Elastify\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Jenky\\LaravelElasticsearch\\": "tests"
+            "Jenky\\Elastify\\": "tests"
         }
     },
     "scripts": {
@@ -46,10 +48,10 @@
         },
         "laravel": {
             "providers": [
-                "Jenky\\LaravelElasticsearch\\ElasticsearchServiceProvider"
+                "Jenky\\Elastify\\ElastifyServiceProvider"
             ],
             "aliases": {
-                "ES": "Jenky\\LaravelElasticsearch\\Facades\\ES"
+                "ES": "Jenky\\Elastify\\Facades\\ES"
             }
         }
     },

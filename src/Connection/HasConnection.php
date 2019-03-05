@@ -1,8 +1,8 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Connection;
+namespace Jenky\Elastify\Connection;
 
-use Jenky\LaravelElasticsearch\Contracts\ConnectionResolver;
+use Jenky\Elastify\Contracts\ConnectionResolver;
 
 trait HasConnection
 {
@@ -16,14 +16,14 @@ trait HasConnection
     /**
      * The connection resolver instance.
      *
-     * @var \Jenky\LaravelElasticsearch\Contracts\ConnectionResolver
+     * @var \Jenky\Elastify\Contracts\ConnectionResolver
      */
     protected static $resolver;
 
     /**
      * Get the elasticsearch connection for the index.
      *
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     public function getConnection()
     {
@@ -57,7 +57,7 @@ trait HasConnection
      * Resolve a connection instance.
      *
      * @param  string|null  $connection
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     public static function resolveConnection($connection = null)
     {
@@ -67,7 +67,7 @@ trait HasConnection
     /**
      * Get the connection resolver instance.
      *
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionResolver
+     * @return \Jenky\Elastify\Contracts\ConnectionResolver
      */
     public static function getConnectionResolver(): ConnectionResolver
     {
@@ -77,7 +77,7 @@ trait HasConnection
     /**
      * Set the connection resolver instance.
      *
-     * @param  \Jenky\LaravelElasticsearch\Contracts\ConnectionResolver  $resolver
+     * @param  \Jenky\Elastify\Contracts\ConnectionResolver  $resolver
      * @return void
      */
     public static function setConnectionResolver(ConnectionResolver $resolver)

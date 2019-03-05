@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Connection;
+namespace Jenky\Elastify\Connection;
 
 use Elasticsearch\Client;
 use Elasticsearch\ClientBuilder;
@@ -9,8 +9,7 @@ use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Ring\Future\CompletedFutureArray;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
-use Jenky\LaravelElasticsearch\Connection\Connection;
-use Jenky\LaravelElasticsearch\Contracts\ClientFactory;
+use Jenky\Elastify\Contracts\ClientFactory;
 use Psr\Http\Message\ResponseInterface;
 
 class Factory implements ClientFactory
@@ -56,7 +55,7 @@ class Factory implements ClientFactory
      * the default client.
      *
      * @param  array $config
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     public function make(array $config)
     {
@@ -67,7 +66,7 @@ class Factory implements ClientFactory
      * Build and configure an Elasticsearch client.
      *
      * @param  array $config
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     protected function createClient(array $config)
     {

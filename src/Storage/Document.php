@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Storage;
+namespace Jenky\Elastify\Storage;
 
 use ArrayAccess;
 use DateTimeInterface;

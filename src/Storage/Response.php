@@ -1,11 +1,10 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Storage;
+namespace Jenky\Elastify\Storage;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
-use Jenky\LaravelElasticsearch\Contracts\Paginator;
+use Jenky\Elastify\Contracts\Paginator;
 
 class Response extends LengthAwarePaginator implements Paginator
 {
@@ -108,7 +107,7 @@ class Response extends LengthAwarePaginator implements Paginator
     }
 
     /**
-     * Get the aggregation value
+     * Get the aggregation value.
      *
      * @param  string $key
      * @param  mixed $default

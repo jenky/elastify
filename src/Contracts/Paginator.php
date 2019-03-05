@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Contracts;
+namespace Jenky\Elastify\Contracts;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -42,7 +42,7 @@ interface Paginator extends LengthAwarePaginator
     public function aggregations();
 
     /**
-     * Get the aggregation value
+     * Get the aggregation value.
      *
      * @param  string $key
      * @param  mixed $default

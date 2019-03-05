@@ -1,11 +1,11 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Storage;
+namespace Jenky\Elastify\Storage;
 
 use Closure;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Traits\Macroable;
-use Jenky\LaravelElasticsearch\Builder\Query;
+use Jenky\Elastify\Builder\Query;
 
 class Builder
 {
@@ -14,7 +14,7 @@ class Builder
     }
 
     /**
-     * @var \Jenky\LaravelElasticsearch\Builder\Query
+     * @var \Jenky\Elastify\Builder\Query
      */
     protected $query;
 
@@ -59,7 +59,7 @@ class Builder
     /**
      * Create new query builder instance.
      *
-     * @param  \Jenky\LaravelElasticsearch\Builder\Query $query
+     * @param  \Jenky\Elastify\Builder\Query $query
      * @return void
      */
     public function __construct(Query $query)
@@ -71,7 +71,7 @@ class Builder
      * Register a new global scope.
      *
      * @param  string  $identifier
-     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|\Closure  $scope
+     * @param  \Jenky\Elastify\Storage\Scope|\Closure  $scope
      * @return $this
      */
     public function withGlobalScope($identifier, $scope)
@@ -88,7 +88,7 @@ class Builder
     /**
      * Remove a registered global scope.
      *
-     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|string  $scope
+     * @param  \Jenky\Elastify\Storage\Scope|string  $scope
      * @return $this
      */
     public function withoutGlobalScope($scope)
@@ -136,7 +136,7 @@ class Builder
     /**
      * Get the underlying query builder instance.
      *
-     * @return \Jenky\LaravelElasticsearch\Builder\Query
+     * @return \Jenky\Elastify\Builder\Query
      */
     public function getQuery()
     {
@@ -146,7 +146,7 @@ class Builder
     /**
      * Set the underlying query builder instance.
      *
-     * @param  \Jenky\LaravelElasticsearch\Builder\Query  $query
+     * @param  \Jenky\Elastify\Builder\Query  $query
      * @return $this
      */
     public function setQuery($query)
@@ -159,7 +159,7 @@ class Builder
     /**
      * Get the index instance being queried.
      *
-     * @return \Jenky\LaravelElasticsearch\Storage\Index|static
+     * @return \Jenky\Elastify\Storage\Index|static
      */
     public function getIndex()
     {
@@ -169,7 +169,7 @@ class Builder
     /**
      * Set a index instance for the index being queried.
      *
-     * @param  \Jenky\LaravelElasticsearch\Storage\Index  $index
+     * @param  \Jenky\Elastify\Storage\Index  $index
      * @return $this
      */
     public function setIndex(Index $index)
@@ -276,7 +276,7 @@ class Builder
     /**
      * Execute the query and get all results.
      *
-     * @return \Jenky\LaravelElasticsearch\Storage\Response
+     * @return \Jenky\Elastify\Storage\Response
      */
     public function get($perPage = 10, $pageName = 'page', $page = null)
     {

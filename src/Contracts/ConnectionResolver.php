@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Contracts;
+namespace Jenky\Elastify\Contracts;
 
 interface ConnectionResolver
 {
@@ -8,7 +8,7 @@ interface ConnectionResolver
      * Get a database connection instance.
      *
      * @param  string  $name
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     public function connection($name = null): ConnectionInterface;
 

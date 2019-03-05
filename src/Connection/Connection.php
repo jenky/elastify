@@ -1,11 +1,11 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Connection;
+namespace Jenky\Elastify\Connection;
 
 use Elasticsearch\Client;
 use Illuminate\Support\Traits\ForwardsCalls;
-use Jenky\LaravelElasticsearch\Builder\Query;
-use Jenky\LaravelElasticsearch\Contracts\ConnectionInterface;
+use Jenky\Elastify\Builder\Query;
+use Jenky\Elastify\Contracts\ConnectionInterface;
 use ONGR\ElasticsearchDSL\Search;
 
 class Connection implements ConnectionInterface
@@ -45,12 +45,11 @@ class Connection implements ConnectionInterface
     /**
      * Get a new query builder instance.
      *
-     * @return \Jenky\LaravelElasticsearch\Builder\Query
+     * @return \Jenky\Elastify\Builder\Query
      */
     public function query()
     {
         return new Query($this, $this->getQueryGrammar());
-        ;
     }
 
     /**

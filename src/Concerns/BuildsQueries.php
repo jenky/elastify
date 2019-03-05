@@ -1,9 +1,9 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Concerns;
+namespace Jenky\Elastify\Concerns;
 
 use Illuminate\Container\Container;
-use Jenky\LaravelElasticsearch\Storage\Response;
+use Jenky\Elastify\Storage\Response;
 
 trait BuildsQueries
 {
@@ -64,7 +64,7 @@ trait BuildsQueries
      * @param  int  $perPage
      * @param  int  $currentPage
      * @param  array  $options
-     * @return \Jenky\LaravelElasticsearch\Storage\Response
+     * @return \Jenky\Elastify\Storage\Response
      */
     protected function paginator($items, $perPage, $currentPage, $options)
     {

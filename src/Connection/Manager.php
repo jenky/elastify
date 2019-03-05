@@ -1,12 +1,12 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Connection;
+namespace Jenky\Elastify\Connection;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
-use Jenky\LaravelElasticsearch\Contracts\ConnectionInterface;
-use Jenky\LaravelElasticsearch\Contracts\ConnectionResolver;
+use Jenky\Elastify\Contracts\ConnectionInterface;
+use Jenky\Elastify\Contracts\ConnectionResolver;
 
 class Manager implements ConnectionResolver
 {
@@ -20,7 +20,7 @@ class Manager implements ConnectionResolver
     /**
      * The database connection factory instance.
      *
-     * @var \Jenky\LaravelElasticsearch\Connection\Factory
+     * @var \Jenky\Elastify\Connection\Factory
      */
     protected $factory;
 
@@ -55,7 +55,7 @@ class Manager implements ConnectionResolver
      * Get a database connection instance.
      *
      * @param  string  $name
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     public function connection($name = null): ConnectionInterface
     {
@@ -74,7 +74,7 @@ class Manager implements ConnectionResolver
      * Make the database connection instance.
      *
      * @param  string  $name
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     protected function makeConnection($name)
     {

@@ -1,14 +1,14 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch;
+namespace Jenky\Elastify;
 
 use Illuminate\Support\ServiceProvider;
-use Jenky\LaravelElasticsearch\Connection\Factory;
-use Jenky\LaravelElasticsearch\Connection\Manager;
-use Jenky\LaravelElasticsearch\Contracts\ClientFactory;
-use Jenky\LaravelElasticsearch\Storage\Index;
+use Jenky\Elastify\Connection\Factory;
+use Jenky\Elastify\Connection\Manager;
+use Jenky\Elastify\Contracts\ClientFactory;
+use Jenky\Elastify\Storage\Index;
 
-class ElasticsearchServiceProvider extends ServiceProvider
+class ElastifyServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any package services.

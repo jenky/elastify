@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Contracts;
+namespace Jenky\Elastify\Contracts;
 
 interface ConnectionInterface
 {

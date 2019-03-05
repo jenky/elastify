@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Builder;
+namespace Jenky\Elastify\Builder;
 
 use Closure;
 use Illuminate\Contracts\Support\Arrayable;
@@ -9,9 +9,9 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Traits\Macroable;
 use InvalidArgumentException;
-use Jenky\LaravelElasticsearch\Concerns\BuildsQueries;
-use Jenky\LaravelElasticsearch\Contracts\ConnectionInterface;
-use Jenky\LaravelElasticsearch\Storage\Response;
+use Jenky\Elastify\Concerns\BuildsQueries;
+use Jenky\Elastify\Contracts\ConnectionInterface;
+use Jenky\Elastify\Storage\Response;
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
@@ -47,7 +47,7 @@ class Query
     }
 
     /**
-     * @var \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @var \Jenky\Elastify\Contracts\ConnectionInterface
      */
     protected $connection;
 
@@ -97,7 +97,7 @@ class Query
     /**
      * Create a new query builder instance.
      *
-     * @param  \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface $connection
+     * @param  \Jenky\Elastify\Contracts\ConnectionInterface $connection
      * @param  \ONGR\ElasticsearchDSL\Search $query
      * @return void
      */
@@ -110,7 +110,7 @@ class Query
     /**
      * Get the ealsticsearch connection instance.
      *
-     * @return \Jenky\LaravelElasticsearch\Contracts\ConnectionInterface
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     public function getConnection()
     {
@@ -979,6 +979,12 @@ class Query
         return $this;
     }
 
+    /**
+     * Generate aggregation name for field.
+     *
+     * @param  string $field
+     * @return string
+     */
     protected function generateAggregationName($field)
     {
         [$one, $caller] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
@@ -1145,7 +1151,7 @@ class Query
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|array $ids
      * @param  string|null $type
-     * @return \Jenky\LaravelElasticsearch\Storage\Response
+     * @return \Jenky\Elastify\Storage\Response
      */
     public function findMany($ids, $type = null)
     {
@@ -1159,7 +1165,7 @@ class Query
     /**
      * Execute the query and get the first result.
      *
-     * @return \Jenky\LaravelElasticsearch\Storage\Document|array
+     * @return \Jenky\Elastify\Storage\Document|array
      */
     public function first()
     {
@@ -1169,7 +1175,7 @@ class Query
     /**
      * Execute the query and get all results.
      *
-     * @return \Jenky\LaravelElasticsearch\Storage\Response
+     * @return \Jenky\Elastify\Storage\Response
      */
     public function get($perPage = 10, $pageName = 'page', $page = null): Response
     {

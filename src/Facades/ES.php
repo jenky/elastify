@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Facades;
+namespace Jenky\Elastify\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

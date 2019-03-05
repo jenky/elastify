@@ -1,12 +1,12 @@
 <?php
 
-namespace Jenky\LaravelElasticsearch\Storage;
+namespace Jenky\Elastify\Storage;
 
 use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
-use Jenky\LaravelElasticsearch\Connection\HasConnection;
+use Jenky\Elastify\Connection\HasConnection;
 use ONGR\ElasticsearchDSL\Search;
 
 abstract class Index
@@ -347,7 +347,7 @@ abstract class Index
     /**
      * Get a new query builder for the model's table.
      *
-     * @return \Jenky\LaravelElasticsearch\Storage\Builder
+     * @return \Jenky\Elastify\Storage\Builder
      */
     public function newQuery()
     {
@@ -369,8 +369,8 @@ abstract class Index
     /**
      * Register the global scopes for this builder instance.
      *
-     * @param  \Jenky\LaravelElasticsearch\Storage\Builder  $builder
-     * @return \Jenky\LaravelElasticsearch\Storage\Builder
+     * @param  \Jenky\Elastify\Storage\Builder  $builder
+     * @return \Jenky\Elastify\Storage\Builder
      */
     public function registerGlobalScopes($builder)
     {
@@ -394,8 +394,8 @@ abstract class Index
     /**
      * Get a new query instance without a given scope.
      *
-     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|string  $scope
-     * @return \Jenky\LaravelElasticsearch\Storage\Builder
+     * @param  \Jenky\Elastify\Storage\Scope|string  $scope
+     * @return \Jenky\Elastify\Storage\Builder
      */
     public function newQueryWithoutScope($scope)
     {
@@ -405,8 +405,8 @@ abstract class Index
     /**
      * Create a new query builder for the index.
      *
-     * @param  \Jenky\LaravelElasticsearch\Builder\Query  $query
-     * @return \Jenky\LaravelElasticsearch\Storage\Builder|static
+     * @param  \Jenky\Elastify\Builder\Query  $query
+     * @return \Jenky\Elastify\Storage\Builder|static
      */
     public function newBuilder($query)
     {
@@ -426,11 +426,10 @@ abstract class Index
     /**
      * Register a new global scope on the model.
      *
-     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|\Closure|string  $scope
+     * @param  \Jenky\Elastify\Storage\Scope|\Closure|string  $scope
      * @param  \Closure|null  $implementation
-     * @return mixed
-     *
      * @throws \InvalidArgumentException
+     * @return mixed
      */
     public static function addGlobalScope($scope, Closure $implementation = null)
     {
@@ -459,8 +458,8 @@ abstract class Index
     /**
      * Get a global scope registered with the model.
      *
-     * @param  \Jenky\LaravelElasticsearch\Storage\Scope|string  $scope
-     * @return \Jenky\LaravelElasticsearch\Storage\Scope|\Closure|null
+     * @param  \Jenky\Elastify\Storage\Scope|string  $scope
+     * @return \Jenky\Elastify\Storage\Scope|\Closure|null
      */
     public static function getGlobalScope($scope)
     {
