@@ -22,29 +22,10 @@ use ONGR\ElasticsearchDSL\Aggregation\Metric\PercentilesAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Metric\StatsAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Metric\SumAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Metric\ValueCountAggregation;
-use ONGR\ElasticsearchDSL\Search;
 
-class Aggregation
+class Aggregation extends AbstractBuilder
 {
     use BuildsQueries;
-
-    /**
-     * An instance of DSL query.
-     *
-     * @var \ONGR\ElasticsearchDSL\Search
-     */
-    public $query;
-
-    /**
-     * Create new aggretion builder instance.
-     *
-     * @param   \ONGR\ElasticsearchDSL\Search $query
-     * @return void
-     */
-    public function __construct(Search $query = null)
-    {
-        $this->query = $query;
-    }
 
     /**
      * Add an average aggregate.
@@ -356,16 +337,6 @@ class Aggregation
         $aggregation = new TermsAggregation($name, $field, $script);
 
         return $this->append($aggregation);
-    }
-
-    /**
-     * Return the DSL query.
-     *
-     * @return array
-     */
-    public function toDSL()
-    {
-        return $this->query->toArray();
     }
 
     /**

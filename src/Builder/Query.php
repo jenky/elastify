@@ -5,12 +5,10 @@ namespace Jenky\Elastify\Builder;
 use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Traits\Macroable;
 use InvalidArgumentException;
 use Jenky\Elastify\Concerns\BuildsQueries;
-use Jenky\Elastify\Contracts\ConnectionInterface;
 use Jenky\Elastify\Storage\Response;
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
@@ -36,20 +34,14 @@ use ONGR\ElasticsearchDSL\Query\TermLevel\RegexpQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermsQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\WildcardQuery;
-use ONGR\ElasticsearchDSL\Search;
 use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use ReflectionClass;
 
-class Query
+class Query extends AbstractBuilder
 {
     use BuildsQueries, ForwardsCalls, Macroable {
         __call as macroCall;
     }
-
-    /**
-     * @var \Jenky\Elastify\Contracts\ConnectionInterface
-     */
-    protected $connection;
 
     /**
      * The indices/aliases which the query is targeting.
@@ -64,13 +56,6 @@ class Query
      * @var string
      */
     protected $type;
-
-    /**
-     * The DSL query builder.
-     *
-     * @var \ONGR\ElasticsearchDSL\Search
-     */
-    protected $query;
 
     /**
      * Query bool state.
@@ -93,52 +78,6 @@ class Query
         // '~', '~*', '!~', '!~*', 'similar to',
         // 'not similar to', 'not ilike', '~~*', '!~~*',
     ];
-
-    /**
-     * Create a new query builder instance.
-     *
-     * @param  \Jenky\Elastify\Contracts\ConnectionInterface $connection
-     * @param  \ONGR\ElasticsearchDSL\Search $query
-     * @return void
-     */
-    public function __construct(ConnectionInterface $connection, Search $query = null)
-    {
-        $this->connection = $connection;
-        $this->query = $query ?: $connection->getQueryGrammar();
-    }
-
-    /**
-     * Get the ealsticsearch connection instance.
-     *
-     * @return \Jenky\Elastify\Contracts\ConnectionInterface
-     */
-    public function getConnection()
-    {
-        return $this->connection;
-    }
-
-    /**
-     * Get the underlying query builder instance.
-     *
-     * @return \ONGR\ElasticsearchDSL\Search  $query
-     */
-    public function getQuery()
-    {
-        return $this->query;
-    }
-
-    /**
-     * Set the underlying query builder instance.
-     *
-     * @param  \ONGR\ElasticsearchDSL\Search  $query
-     * @return $this
-     */
-    public function setQuery(Search $query)
-    {
-        $this->query = $query;
-
-        return $this;
-    }
 
     /**
      * Set the indices/aliases which the query is targeting.
@@ -495,6 +434,8 @@ class Query
         }
 
         return $this->append(new IdsQuery(
+            (array) $id,
+            array_filter(compact('type'))
         ));
 
         return $this;
@@ -877,8 +818,7 @@ class Query
      */
     public function highlight($fields = ['_all' => []], $parameters = [], $preTag = '<mark>', $postTag = '</mark>')
     {
-        $highlight = new Highlight;
-        $highlight->setTags((array) $preTag, (array) $postTag);
+        $highlight = (new Highlight)->setTags((array) $preTag, (array) $postTag);
 
         foreach ($fields as $field => $fieldParams) {
             $highlight->addField($field, $fieldParams);
@@ -967,14 +907,43 @@ class Query
     /**
      * Add aggregation.
      *
-     * @param \Closure $closure
+     * @param \Closure|string $callback
      * @return $this
      */
-    public function aggregate(Closure $closure)
+    public function aggregate($callback)
     {
-        $builder = new Aggregation($this->query);
+        return $this->callBuilder($callback, new Aggregation(
+            $this->connection, $this->query
+        ));
+    }
 
-        $closure($builder);
+    /**
+     * Add suggesters.
+     *
+     * @param  \Closure|string $callback
+     * @return $this
+     */
+    public function suggest($callback)
+    {
+        return $this->callBuilder($callback, new Suggestion(
+            $this->connection, $this->query
+        ));
+    }
+
+    /**
+     * Call the builder to build sub query.
+     *
+     * @param  \Closure|string $callback
+     * @param  \Jenky\Elastify\Builder\AbstractBuilder $builder
+     * @return $this
+     */
+    protected function callBuilder($callback, AbstractBuilder $builder)
+    {
+        if ($callback instanceof Closure) {
+            $callback($builder);
+        } else {
+            (new $callback)->__invoke($builder);
+        }
 
         return $this;
     }
@@ -1077,16 +1046,6 @@ class Query
     public function forPage($page, $perPage = 10)
     {
         return $this->skip(($page - 1) * $perPage)->take($perPage);
-    }
-
-    /**
-     * Return the DSL query.
-     *
-     * @return array
-     */
-    public function toDSL()
-    {
-        return $this->query->toArray();
     }
 
     /**

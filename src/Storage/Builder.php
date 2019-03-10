@@ -39,7 +39,7 @@ class Builder
         'insert', 'exists', 'indexExists', 'flush', 'create', 'drop', 'createIfNotExists', 'dropIfExists',
         'count',
         // 'min', 'max', 'avg', 'average', 'sum',
-        'toDSL', 'getConnection',
+        'suggest', 'toDSL', 'getConnection',
     ];
 
     /**
