@@ -2,9 +2,7 @@
 
 namespace Jenky\Elastify\Contracts;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-
-interface Paginator extends LengthAwarePaginator
+interface ResponseInterface
 {
     /**
      * Get took value.
@@ -35,20 +33,27 @@ interface Paginator extends LengthAwarePaginator
     public function hits();
 
     /**
-     * Get the "aggregations" values.
+     * Get the "total" documents value.
      *
-     * @return array
+     * @return int
      */
-    public function aggregations();
+    public function total();
 
     /**
-     * Get the aggregation value.
+     * Get the "aggregations" values.
      *
-     * @param  string $key
+     * @param  string|null $key
      * @param  mixed $default
-     * @return void
+     * @return mixed
      */
-    public function aggregation($key, $default = null);
+    public function aggregations($key = null, $default = null);
 
-    // public function suggest();
+    /**
+     * Get the "suggest" values.
+     *
+     * @param  string|null $key
+     * @param  mixed $default
+     * @return mixed
+     */
+    public function suggest($key = null, $default = null);
 }

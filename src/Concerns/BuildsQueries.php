@@ -3,7 +3,8 @@
 namespace Jenky\Elastify\Concerns;
 
 use Illuminate\Container\Container;
-use Jenky\Elastify\Storage\Response;
+use Jenky\Elastify\Collection;
+use Jenky\Elastify\Paginator;
 
 trait BuildsQueries
 {
@@ -57,6 +58,17 @@ trait BuildsQueries
     }
 
     /**
+     * Create a new response collection instance.
+     *
+     * @param  array $response
+     * @return \Jenky\Elastify\Collection
+     */
+    protected function collection(array $response)
+    {
+        return Container::getInstance()->makeWith(Collection::class, compact('response'));
+    }
+
+    /**
      * Create a new length-aware paginator instance.
      *
      * @param  \Illuminate\Support\Collection  $items
@@ -64,15 +76,12 @@ trait BuildsQueries
      * @param  int  $perPage
      * @param  int  $currentPage
      * @param  array  $options
-     * @return \Jenky\Elastify\Storage\Response
+     * @return \Jenky\Elastify\Paginator
      */
     protected function paginator($items, $perPage, $currentPage, $options)
     {
-        return Container::getInstance()->makeWith(Response::class, compact(
-            'items',
-            'perPage',
-            'currentPage',
-            'options'
+        return Container::getInstance()->makeWith(Paginator::class, compact(
+            'items', 'perPage', 'currentPage', 'options'
         ));
     }
 }

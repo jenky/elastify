@@ -6,7 +6,6 @@ use Illuminate\Support\ServiceProvider;
 use Jenky\Elastify\Connection\Factory;
 use Jenky\Elastify\Connection\Manager;
 use Jenky\Elastify\Contracts\ClientFactory;
-use Jenky\Elastify\Storage\Index;
 
 class ElastifyServiceProvider extends ServiceProvider
 {

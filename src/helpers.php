@@ -5,7 +5,7 @@ if (! function_exists('elasticsearch')) {
      * Get a elasticsearch client instance.
      *
      * @param  string  $connection
-     * @return \Elasticsearch\Client
+     * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
     function elasticsearch($connection = null)
     {

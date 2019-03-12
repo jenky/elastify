@@ -9,7 +9,6 @@ use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Traits\Macroable;
 use InvalidArgumentException;
 use Jenky\Elastify\Concerns\BuildsQueries;
-use Jenky\Elastify\Storage\Response;
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
@@ -913,7 +912,8 @@ class Query extends AbstractBuilder
     public function aggregate($callback)
     {
         return $this->callBuilder($callback, new Aggregation(
-            $this->connection, $this->query
+            $this->connection,
+            $this->query
         ));
     }
 
@@ -926,7 +926,8 @@ class Query extends AbstractBuilder
     public function suggest($callback)
     {
         return $this->callBuilder($callback, new Suggestion(
-            $this->connection, $this->query
+            $this->connection,
+            $this->query
         ));
     }
 
@@ -1110,7 +1111,7 @@ class Query extends AbstractBuilder
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|array $ids
      * @param  string|null $type
-     * @return \Jenky\Elastify\Storage\Response
+     * @return \Jenky\Elastify\Response
      */
     public function findMany($ids, $type = null)
     {
@@ -1124,7 +1125,7 @@ class Query extends AbstractBuilder
     /**
      * Execute the query and get the first result.
      *
-     * @return \Jenky\Elastify\Storage\Document|array
+     * @return \Jenky\Elastify\Document|array
      */
     public function first()
     {
@@ -1134,9 +1135,24 @@ class Query extends AbstractBuilder
     /**
      * Execute the query and get all results.
      *
-     * @return \Jenky\Elastify\Storage\Response
+     * @return \Jenky\Elastify\Contracts\ResponseInterface
      */
-    public function get($perPage = 10, $pageName = 'page', $page = null): Response
+    public function get()
+    {
+        $limit = $this->query->getSize() ?: $this->count();
+
+        return $this->collection(
+            $this->take($limit)
+            ->search($this->toDSL())
+        );
+    }
+
+    /**
+     * Paginate the given query into a simple paginator.
+     *
+     * @return \Jenky\Elastify\Response
+     */
+    public function paginate($perPage = 10, $pageName = 'page', $page = null)
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
 
@@ -1144,15 +1160,10 @@ class Query extends AbstractBuilder
             $this->forPage($page, $perPage)->toDSL()
         );
 
-        return $this->paginator(
-            $results,
-            $perPage,
-            $page,
-            [
-                'path' => Paginator::resolveCurrentPath(),
-                'pageName' => $pageName,
-            ]
-        );
+        return $this->paginator($results, $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
+        ]);
     }
 
     /**

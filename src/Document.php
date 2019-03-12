@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\Elastify\Storage;
+namespace Jenky\Elastify;
 
 use ArrayAccess;
 use DateTimeInterface;

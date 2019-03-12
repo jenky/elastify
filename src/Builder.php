@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\Elastify\Storage;
+namespace Jenky\Elastify;
 
 use Closure;
 use Illuminate\Support\Traits\ForwardsCalls;
@@ -71,7 +71,7 @@ class Builder
      * Register a new global scope.
      *
      * @param  string  $identifier
-     * @param  \Jenky\Elastify\Storage\Scope|\Closure  $scope
+     * @param  \Jenky\Elastify\Scope|\Closure  $scope
      * @return $this
      */
     public function withGlobalScope($identifier, $scope)
@@ -88,7 +88,7 @@ class Builder
     /**
      * Remove a registered global scope.
      *
-     * @param  \Jenky\Elastify\Storage\Scope|string  $scope
+     * @param  \Jenky\Elastify\Scope|string  $scope
      * @return $this
      */
     public function withoutGlobalScope($scope)
@@ -159,7 +159,7 @@ class Builder
     /**
      * Get the index instance being queried.
      *
-     * @return \Jenky\Elastify\Storage\Index|static
+     * @return \Jenky\Elastify\Index|static
      */
     public function getIndex()
     {
@@ -169,7 +169,7 @@ class Builder
     /**
      * Set a index instance for the index being queried.
      *
-     * @param  \Jenky\Elastify\Storage\Index  $index
+     * @param  \Jenky\Elastify\Index  $index
      * @return $this
      */
     public function setIndex(Index $index)
@@ -276,11 +276,14 @@ class Builder
     /**
      * Execute the query and get all results.
      *
-     * @return \Jenky\Elastify\Storage\Response
+     * @param  int $perPage
+     * @param  string $pageName
+     * @param  int|null $page
+     * @return \Jenky\Elastify\Response
      */
-    public function get($perPage = 10, $pageName = 'page', $page = null)
+    public function paginate($perPage = 10, $pageName = 'page', $page = null)
     {
-        return $this->toBase()->get(
+        return $this->toBase()->paginate(
             $perPage ?: $this->getIndex()->getPerPage(),
             $pageName,
             $page

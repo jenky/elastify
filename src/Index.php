@@ -1,13 +1,12 @@
 <?php
 
-namespace Jenky\Elastify\Storage;
+namespace Jenky\Elastify;
 
 use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Jenky\Elastify\Connection\HasConnection;
-use ONGR\ElasticsearchDSL\Search;
 
 abstract class Index
 {
@@ -347,7 +346,7 @@ abstract class Index
     /**
      * Get a new query builder for the model's table.
      *
-     * @return \Jenky\Elastify\Storage\Builder
+     * @return \Jenky\Elastify\Builder
      */
     public function newQuery()
     {
@@ -369,8 +368,8 @@ abstract class Index
     /**
      * Register the global scopes for this builder instance.
      *
-     * @param  \Jenky\Elastify\Storage\Builder  $builder
-     * @return \Jenky\Elastify\Storage\Builder
+     * @param  \Jenky\Elastify\Builder  $builder
+     * @return \Jenky\Elastify\Builder
      */
     public function registerGlobalScopes($builder)
     {
@@ -394,8 +393,8 @@ abstract class Index
     /**
      * Get a new query instance without a given scope.
      *
-     * @param  \Jenky\Elastify\Storage\Scope|string  $scope
-     * @return \Jenky\Elastify\Storage\Builder
+     * @param  \Jenky\Elastify\Scope|string  $scope
+     * @return \Jenky\Elastify\Builder
      */
     public function newQueryWithoutScope($scope)
     {
@@ -406,7 +405,7 @@ abstract class Index
      * Create a new query builder for the index.
      *
      * @param  \Jenky\Elastify\Builder\Query  $query
-     * @return \Jenky\Elastify\Storage\Builder|static
+     * @return \Jenky\Elastify\Builder|static
      */
     public function newBuilder($query)
     {
@@ -426,7 +425,7 @@ abstract class Index
     /**
      * Register a new global scope on the model.
      *
-     * @param  \Jenky\Elastify\Storage\Scope|\Closure|string  $scope
+     * @param  \Jenky\Elastify\Scope|\Closure|string  $scope
      * @param  \Closure|null  $implementation
      * @throws \InvalidArgumentException
      * @return mixed
@@ -458,8 +457,8 @@ abstract class Index
     /**
      * Get a global scope registered with the model.
      *
-     * @param  \Jenky\Elastify\Storage\Scope|string  $scope
-     * @return \Jenky\Elastify\Storage\Scope|\Closure|null
+     * @param  \Jenky\Elastify\Scope|string  $scope
+     * @return \Jenky\Elastify\Scope|\Closure|null
      */
     public static function getGlobalScope($scope)
     {
