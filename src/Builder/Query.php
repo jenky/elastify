@@ -940,11 +940,9 @@ class Query extends AbstractBuilder
      */
     protected function callBuilder($callback, AbstractBuilder $builder)
     {
-        if ($callback instanceof Closure) {
-            $callback($builder);
-        } else {
-            (new $callback)->__invoke($builder);
-        }
+        $callback = $callback instanceof Closure ? $callback : new $callback;
+
+        $callback->__invoke($builder);
 
         return $this;
     }
