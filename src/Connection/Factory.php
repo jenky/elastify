@@ -118,12 +118,14 @@ class Factory implements ClientFactory
                     Arr::get($config, 'level')
                 );
                 $client->setLogger($logObject);
+
                 break;
 
             case 'logger':
                 $client->setLogger(
                     $this->container['log']->channel(Arr::get($config, 'channel'))
                 );
+
                 break;
 
             default:

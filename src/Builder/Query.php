@@ -1143,7 +1143,7 @@ class Query extends AbstractBuilder
 
         return $this->collection(
             $this->take($limit)
-            ->search($this->toDSL())
+                ->search($this->toDSL())
         );
     }
 
