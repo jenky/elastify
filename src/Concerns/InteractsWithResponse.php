@@ -3,6 +3,8 @@
 namespace Jenky\Elastify\Concerns;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Jenky\Elastify\Document;
 
 trait InteractsWithResponse
 {
@@ -48,7 +50,8 @@ trait InteractsWithResponse
      */
     public function hits()
     {
-        return $this->response['hits']['hits'] ?? [];
+        return Collection::make($this->response['hits']['hits'] ?? [])
+            ->mapInto(Document::class);
     }
 
     /**

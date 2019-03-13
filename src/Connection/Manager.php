@@ -129,7 +129,7 @@ class Manager implements ConnectionResolver
      * @param  string  $name
      * @return void
      */
-    public function setDefaultConnection($name): string
+    public function setDefaultConnection($name)
     {
         $this->app['config']['elasticsearch.default'] = $name;
     }

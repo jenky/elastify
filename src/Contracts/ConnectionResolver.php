@@ -25,5 +25,5 @@ interface ConnectionResolver
      * @param  string  $name
      * @return void
      */
-    public function setDefaultConnection($name): string;
+    public function setDefaultConnection($name);
 }

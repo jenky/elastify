@@ -91,9 +91,9 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
      *
      * @return string
      */
-    public function getIndex(): string
+    public function index()
     {
-        return $this->original['_index'];
+        return $this->original['_index'] ?? null;
     }
 
     /**
@@ -101,9 +101,9 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
      *
      * @return string
      */
-    public function getType(): string
+    public function type()
     {
-        return $this->original['_type'];
+        return $this->original['_type'] ?? null;
     }
 
     /**
@@ -111,9 +111,9 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
      *
      * @return mixed
      */
-    public function getId()
+    public function id()
     {
-        return $this->original['_id'];
+        return $this->original['_id'] ?? null;
     }
 
     /**
@@ -121,9 +121,9 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
      *
      * @return float
      */
-    public function getScore(): float
+    public function score()
     {
-        return $this->original['_score'];
+        return $this->original['_score'] ?? null;
     }
 
     /**
@@ -131,7 +131,7 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
      *
      * @return array
      */
-    public function getSource(): array
+    public function source(): array
     {
         return $this->original['_source'] ?? [];
     }
@@ -142,7 +142,7 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
      * @param  string|null $field
      * @return array|null
      */
-    public function getHighlight($field = null)
+    public function highlight($field = null)
     {
         $highlight = $this->original['highlight'] ?? [];
 
@@ -418,7 +418,7 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
 
         $this->original = $attributes;
 
-        foreach ($this->getSource() as $key => $value) {
+        foreach ($this->source() as $key => $value) {
             $this->setAttribute($key, $value);
         }
 
