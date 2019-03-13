@@ -21,6 +21,9 @@
     "require": {
         "php" : "~7.0",
         "elasticsearch/elasticsearch": "^6.0",
+        "illuminate/config": "^5.5",
+        "illuminate/container": "^5.5",
+        "illuminate/pagination": "^5.5",
         "ongr/elasticsearch-dsl": "^6.0"
     },
     "require-dev": {

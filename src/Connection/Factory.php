@@ -2,7 +2,6 @@
 
 namespace Jenky\Elastify\Connection;
 
-use Elasticsearch\Client;
 use Elasticsearch\ClientBuilder;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
