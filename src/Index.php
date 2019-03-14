@@ -214,7 +214,7 @@ abstract class Index
     /**
      * Create new model instance.
      *
-     * @return void
+     * @return $this
      */
     public static function make()
     {
