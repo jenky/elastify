@@ -252,9 +252,7 @@ class Query extends AbstractBuilder
         // passed to the method, we will assume that the operator is an equals sign
         // and keep going. Otherwise, we'll require the operator to be passed in.
         [$value, $operator] = $this->prepareValueAndOperator(
-            $value,
-            $operator,
-            func_num_args() === 2
+            $value, $operator, func_num_args() === 2
         );
 
         // If the field is actually a Closure instance, we will assume the developer
@@ -376,9 +374,7 @@ class Query extends AbstractBuilder
     public function orWhere($field, $operator = null, $value = null)
     {
         [$value, $operator] = $this->prepareValueAndOperator(
-            $value,
-            $operator,
-            func_num_args() === 2
+            $value, $operator, func_num_args() === 2
         );
 
         return $this->where($field, $operator, $value, BoolQuery::SHOULD);
@@ -433,8 +429,7 @@ class Query extends AbstractBuilder
         }
 
         return $this->append(new IdsQuery(
-            (array) $id,
-            array_filter(compact('type'))
+            (array) $id, array_filter(compact('type'))
         ));
 
         return $this;
@@ -912,8 +907,7 @@ class Query extends AbstractBuilder
     public function aggregate($callback)
     {
         return $this->callBuilder($callback, new Aggregation(
-            $this->connection,
-            $this->query
+            $this->connection, $this->query
         ));
     }
 
@@ -926,8 +920,7 @@ class Query extends AbstractBuilder
     public function suggest($callback)
     {
         return $this->callBuilder($callback, new Suggestion(
-            $this->connection,
-            $this->query
+            $this->connection, $this->query
         ));
     }
 
@@ -1140,8 +1133,7 @@ class Query extends AbstractBuilder
         $limit = $this->query->getSize() ?: $this->count();
 
         return $this->collection(
-            $this->take($limit)
-                ->search($this->toDSL())
+            $this->take($limit)->search($this->toDSL())
         );
     }
 
