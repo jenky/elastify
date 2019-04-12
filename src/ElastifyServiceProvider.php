@@ -29,8 +29,7 @@ class ElastifyServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__.'/../config/elasticsearch.php',
-            'elasticsearch'
+            __DIR__.'/../config/elasticsearch.php', 'elasticsearch'
         );
 
         $this->registerConnectionServices();

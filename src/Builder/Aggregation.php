@@ -30,39 +30,47 @@ class Aggregation extends AbstractBuilder
     /**
      * Add an average aggregate.
      *
-     * @param   $name
-     * @param   string|null $field
-     * @param   string|null $script
+     * @param  string $name
+     * @param  string|null $field
+     * @param  string|null $script
      * @return $this
      */
     public function average($name, $field = null, $script = null)
     {
-        $aggregation = new AvgAggregation($name, $field, $script);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new AvgAggregation($name, $field, $script)
+        );
     }
 
     /**
      * Add an cardinality aggregate.
      *
-     * @param  $name
+     * @param  string $name
      * @param  string|null $field
      * @param  string|null $script
-     * @param  int         $precision
-     * @param  bool        $rehash
+     * @param  int $precision
+     * @param  bool $rehash
      * @return $this
      */
     public function cardinality($name, $field = null, $script = null, $precision = null, $rehash = null)
     {
         $aggregation = new CardinalityAggregation($name);
 
-        $aggregation->setField($field);
+        if ($field) {
+            $aggregation->setField($field);
+        }
 
-        $aggregation->setScript($script);
+        if ($script) {
+            $aggregation->setScript($script);
+        }
 
-        $aggregation->setPrecisionThreshold($precision);
+        if ($precision) {
+            $aggregation->setPrecisionThreshold($precision);
+        }
 
-        $aggregation->setRehash($rehash);
+        if ($rehash) {
+            $aggregation->setRehash($rehash);
+        }
 
         return $this->append($aggregation);
     }
@@ -70,7 +78,7 @@ class Aggregation extends AbstractBuilder
     /**
      * Add a date range aggregate.
      *
-     * @param  $name
+     * @param  string $name
      * @param  string|null $field
      * @param  string|null $format
      * @param  array $ranges
@@ -78,30 +86,30 @@ class Aggregation extends AbstractBuilder
      */
     public function dateRange($name, $field = null, $format = null, array $ranges = [])
     {
-        $aggregation = new DateRangeAggregation($name, $field, $format, $ranges);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new DateRangeAggregation($name, $field, $format, $ranges)
+        );
     }
 
     /**
      * Add a geo bounds aggregate.
      *
-     * @param  string      $name
+     * @param  string $name
      * @param  null|string $field
-     * @param  bool        $wrapLongitude
+     * @param  bool $wrapLongitude
      * @return $this
      */
     public function geoBounds($name, $field = null, $wrapLongitude = true)
     {
-        $aggregation = new GeoBoundsAggregation($name, $field, $wrapLongitude);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new GeoBoundsAggregation($name, $field, $wrapLongitude)
+        );
     }
 
     /**
      * Add a geo bounds aggregate.
      *
-     * @param  string      $name
+     * @param  string $name
      * @param  null|string $field
      * @param  string|null $origin
      * @param  array $ranges
@@ -109,25 +117,25 @@ class Aggregation extends AbstractBuilder
      */
     public function geoDistance($name, $field = null, $origin = null, array $ranges = [])
     {
-        $aggregation = new GeoDistanceAggregation($name, $field, $origin, $ranges);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new GeoDistanceAggregation($name, $field, $origin, $ranges)
+        );
     }
 
     /**
      * Add a geo hash grid aggregate.
      *
-     * @param  string      $name
+     * @param  string $name
      * @param  null|string $field
-     * @param  float       $precision
-     * @param  null        $size
-     * @param  null        $shardSize
+     * @param  int $precision
+     * @param  int $size
+     * @param  int $shardSize
      */
     public function geoHashGrid($name, $field, $precision, $size = null, $shardSize = null)
     {
-        $aggregation = new GeoHashGridAggregation($name, $field, $precision, $size, $shardSize);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new GeoHashGridAggregation($name, $field, $precision, $size, $shardSize)
+        );
     }
 
     /**
@@ -135,13 +143,13 @@ class Aggregation extends AbstractBuilder
      *
      * @param  string $name
      * @param  string|null $field
-     * @param  int|null    $interval
-     * @param  int    $minDocCount
+     * @param  int|null $interval
+     * @param  int $minDocCount
      * @param  string $orderMode
      * @param  string $orderDirection
-     * @param  int    $extendedBoundsMin
-     * @param  int    $extendedBoundsMax
-     * @param  bool   $keyed
+     * @param  int $extendedBoundsMin
+     * @param  int $extendedBoundsMax
+     * @param  bool $keyed
      * @return $this
      */
     public function histogram(
@@ -171,18 +179,18 @@ class Aggregation extends AbstractBuilder
     }
 
     /**
-     * Add an ipv4 range aggregate.
+     * Add an IP v4 range aggregate.
      *
      * @param  string $name
-     * @param  string|null  $field
+     * @param  string|null $field
      * @param  array $ranges
      * @return $this
      */
-    public function ipv4Range($name, $field = null, array $ranges)
+    public function ipV4Range($name, $field = null, array $ranges)
     {
-        $aggregation = new Ipv4RangeAggregation($name, $field, $ranges);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new Ipv4RangeAggregation($name, $field, $ranges)
+        );
     }
 
     /**
@@ -195,9 +203,9 @@ class Aggregation extends AbstractBuilder
      */
     public function max($name, $field = null, $script = null)
     {
-        $aggregation = new MaxAggregation($name, $field, $script);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new MaxAggregation($name, $field, $script)
+        );
     }
 
     /**
@@ -210,9 +218,9 @@ class Aggregation extends AbstractBuilder
      */
     public function min($name, $field = null, $script = null)
     {
-        $aggregation = new MinAggregation($name, $field, $script);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new MinAggregation($name, $field, $script)
+        );
     }
 
     /**
@@ -224,9 +232,9 @@ class Aggregation extends AbstractBuilder
      */
     public function missing($name, $field = null)
     {
-        $aggregation = new MissingAggregation($name, $field);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new MissingAggregation($name, $field)
+        );
     }
 
     /**
@@ -241,9 +249,9 @@ class Aggregation extends AbstractBuilder
      */
     public function percentile($name, $field = null, $percents = null, $script = null, $compression = null)
     {
-        $aggregation = new PercentilesAggregation($name, $field, $percents, $script, $compression);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new PercentilesAggregation($name, $field, $percents, $script, $compression)
+        );
     }
 
     /**
@@ -258,9 +266,9 @@ class Aggregation extends AbstractBuilder
      */
     public function percentileRanks($name, $field, array $values, $script = null, $compression = null)
     {
-        $aggregation = new PercentileRanksAggregation($name, $field, $values, $script, $compression);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new PercentileRanksAggregation($name, $field, $values, $script, $compression)
+        );
     }
 
     /**
@@ -273,9 +281,9 @@ class Aggregation extends AbstractBuilder
      */
     public function stats($name, $field = null, $script = null)
     {
-        $aggregation = new StatsAggregation($name, $field, $script);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new StatsAggregation($name, $field, $script)
+        );
     }
 
     /**
@@ -288,24 +296,24 @@ class Aggregation extends AbstractBuilder
      */
     public function sum($name, $field = null, $script = null)
     {
-        $aggregation = new SumAggregation($name, $field, $script);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new SumAggregation($name, $field, $script)
+        );
     }
 
     /**
      * Add a value count aggregate.
      *
-     * @param  $name
-     * @param  string      $field
+     * @param  string $name
+     * @param  string $field
      * @param  string|null $script
      * @return $this
      */
     public function valueCount($name, $field = null, $script = null)
     {
-        $aggregation = new ValueCountAggregation($name, $field, $script);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new ValueCountAggregation($name, $field, $script)
+        );
     }
 
     /**
@@ -313,36 +321,36 @@ class Aggregation extends AbstractBuilder
      *
      * @param  string $name
      * @param  string $field
-     * @param  array  $ranges
-     * @param  bool   $keyed
+     * @param  array $ranges
+     * @param  bool $keyed
      * @return $this
      */
     public function range($name, $field, array $ranges, $keyed = false)
     {
-        $aggregation = new RangeAggregation($name, $field, $ranges, $keyed);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new RangeAggregation($name, $field, $ranges, $keyed)
+        );
     }
 
     /**
      * Add a terms aggregate.
      *
-     * @param  string      $name
+     * @param  string $name
      * @param  string|null $field
      * @param  string|null $script
      * @return $this
      */
     public function terms($name, $field = null, $script = null)
     {
-        $aggregation = new TermsAggregation($name, $field, $script);
-
-        return $this->append($aggregation);
+        return $this->append(
+            new TermsAggregation($name, $field, $script)
+        );
     }
 
     /**
      * Append an aggregation to the aggregation query builder.
      *
-     * @param \ONGR\ElasticsearchDSL\Aggregation\AbstractAggregation $aggregation
+     * @param  \ONGR\ElasticsearchDSL\Aggregation\AbstractAggregation $aggregation
      * @return $this
      */
     public function append(AbstractAggregation $aggregation)

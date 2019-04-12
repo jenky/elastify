@@ -10,17 +10,17 @@ class Suggestion extends AbstractBuilder
     /**
      * Add a completion suggestion.
      *
-     * @param  $name
-     * @param  $text
-     * @param  $field
+     * @param  string $name
+     * @param  string $text
+     * @param  string $field
      * @param  array $parameters
      * @return $this
      */
     public function completion($name, $text, $field = 'suggest', array $parameters = [])
     {
-        $suggestion = new Suggest($name, 'completion', $text, $field, $parameters);
-
-        return $this->append($suggestion);
+        return $this->append(
+            new Suggest($name, 'completion', $text, $field, $parameters)
+        );
     }
 
     /**
@@ -28,15 +28,15 @@ class Suggestion extends AbstractBuilder
      *
      * @param  string $name
      * @param  string $text
-     * @param  $field
+     * @param  string $field
      * @param  array $parameters
      * @return $this
      */
     public function term($name, $text, $field = '_all', array $parameters = [])
     {
-        $suggestion = new Suggest($name, 'term', $text, $field, $parameters);
-
-        return $this->append($suggestion);
+        return $this->append(
+            new Suggest($name, 'term', $text, $field, $parameters)
+        );
     }
 
     /**
