@@ -9,6 +9,8 @@ use GuzzleHttp\Ring\Future\CompletedFutureArray;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
 use Jenky\Elastify\Contracts\ClientFactory;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
 
 class Factory implements ClientFactory
@@ -112,10 +114,12 @@ class Factory implements ClientFactory
 
         switch ($driver) {
             case 'default':
-                $logObject = ClientBuilder::defaultLogger(
+                $handler = new StreamHandler(
                     Arr::get($config, 'path'), Arr::get($config, 'level')
                 );
-                $client->setLogger($logObject);
+                $client->setLogger(tap(new Logger('elasticsearch'), function ($logger) use ($handler) {
+                    $logger->pushHandler($handler);
+                }));
 
                 break;
 
