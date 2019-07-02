@@ -31,6 +31,7 @@ class Factory implements ClientFactory
         'connection_factory' => 'setConnectionFactory',
         'endpoint' => 'setEndpoint',
         'namespaces' => 'registerNamespace',
+        'tracer' => 'setTracer',
     ];
 
     /**

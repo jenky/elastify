@@ -18,6 +18,9 @@
             "role": "Developer"
         }
     ],
+    "suggest": {
+        "aws/aws-sdk-php": "Required to connect to an Elasticsearch host on AWS (^3.80)"
+    },
     "require": {
         "php" : "~7.0",
         "elasticsearch/elasticsearch": "^6.0",
