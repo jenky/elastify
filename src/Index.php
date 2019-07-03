@@ -97,9 +97,7 @@ abstract class Index
             $className = str_replace('Index', '', class_basename($this));
 
             return str_replace(
-                '\\',
-                '',
-                Str::snake(Str::plural($className))
+                '\\', '', Str::snake(Str::plural($className))
             );
         }
 

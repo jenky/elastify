@@ -172,8 +172,7 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
         // the values to their appropriate type. If the attribute has a mutator we
         // will not perform the cast on those attributes to avoid any confusion.
         $attributes = $this->addCastAttributesToArray(
-            $attributes,
-            $mutatedAttributes
+            $attributes, $mutatedAttributes
         );
 
         // Here we will grab all of the appended, calculated attributes to this model
@@ -228,8 +227,7 @@ class Document implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
             // mutated attribute's actual values. After we finish mutating each of the
             // attributes we will return this final array of the mutated attributes.
             $attributes[$key] = $this->mutateAttributeForArray(
-                $key,
-                $attributes[$key]
+                $key, $attributes[$key]
             );
         }
 

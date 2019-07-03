@@ -284,9 +284,7 @@ class Builder
     public function paginate($perPage = 10, $pageName = 'page', $page = null)
     {
         return $this->toBase()->paginate(
-            $perPage ?: $this->getIndex()->getPerPage(),
-            $pageName,
-            $page
+            $perPage ?: $this->getIndex()->getPerPage(), $pageName, $page
         );
     }
 

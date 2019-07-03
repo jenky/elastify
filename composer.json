@@ -1,7 +1,7 @@
 {
     "name": "jenky/elastify",
     "type": "library",
-    "description": "Powerfull Elasticsearch ODM for laravel",
+    "description": "Powerful Elasticsearch ODM for Laravel",
     "keywords": [
         "jenky",
         "laravel",

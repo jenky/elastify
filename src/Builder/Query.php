@@ -740,9 +740,7 @@ class Query extends AbstractBuilder
      */
     public function geoPolygon($field, array $points = [], array $parameters = [])
     {
-        $query = new GeoPolygonQuery($field, $points, $parameters);
-
-        return $this->append($query);
+        return $this->append(new GeoPolygonQuery($field, $points, $parameters));
     }
 
     /**
