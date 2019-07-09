@@ -50,8 +50,8 @@ trait InteractsWithResponse
      */
     public function hits()
     {
-        return Collection::make($this->response['hits']['hits'] ?? [])
-            ->mapInto(Document::class);
+        return Collection::make($this->response['hits']['hits'] ?? []);
+            // ->mapInto(Document::class);
     }
 
     /**
@@ -83,9 +83,7 @@ trait InteractsWithResponse
      */
     public function aggregations($key = null, $default = null)
     {
-        $aggregations = $this->response['aggregations'] ?? [];
-
-        return $key ? Arr::get($aggregations, $key, $default) : $aggregations;
+        return $this->getSegment('aggregations', $key, $default);
     }
 
     /**
@@ -97,8 +95,21 @@ trait InteractsWithResponse
      */
     public function suggest($key = null, $default = null)
     {
-        $suggest = $this->response['suggest'] ?? [];
+        return $this->getSegment('suggest', $key, $default);
+    }
 
-        return $key ? Arr::get($suggest, $key, $default) : $suggest;
+    /**
+     * Get the segment data from response.
+     *
+     * @param  string $segment
+     * @param  string|null $key
+     * @param  mixed $default
+     * @return mixed
+     */
+    protected function getSegment($segment, $key = null, $default = null)
+    {
+        $data = $this->response[$segment] ?? [];
+
+        return $key ? Arr::get($data, $key, $default) : $data;
     }
 }
