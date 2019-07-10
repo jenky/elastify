@@ -2,7 +2,6 @@
 
 namespace Jenky\Elastify\Builder;
 
-use Jenky\Elastify\Concerns\BuildsQueries;
 use ONGR\ElasticsearchDSL\Aggregation\AbstractAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\DateRangeAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\GeoDistanceAggregation;

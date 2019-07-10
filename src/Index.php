@@ -4,13 +4,14 @@ namespace Jenky\Elastify;
 
 use Closure;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Jenky\Elastify\Connection\HasConnection;
 
 abstract class Index
 {
-    use ForwardsCalls, HasConnection;
+    use ForwardsCalls, HasConnection,
+        Concerns\InteractsWithIndex,
+        Concerns\InteractsWithAlias;
 
     /**
      * The index name.
@@ -18,6 +19,13 @@ abstract class Index
      * @var string
      */
     protected $index;
+
+    /**
+     * Indicates if uses multiple indices.
+     *
+     * @var bool
+     */
+    public $multipleIndices = true;
 
     /**
      * The index type.
@@ -34,18 +42,18 @@ abstract class Index
     protected $perPage = 10;
 
     /**
-     * Indicates if uses multiple indices.
+     * The array of booted indices.
      *
-     * @var bool
+     * @var array
      */
-    public $multipleIndices = true;
+    protected static $booted = [];
 
     /**
-     * Indicates if the index exists.
+     * The array of trait initializers that will be called on each new instance.
      *
-     * @var bool
+     * @var array
      */
-    protected static $exists;
+    protected static $traitInitializers = [];
 
     /**
      * The array of global scopes on the model.
@@ -62,6 +70,102 @@ abstract class Index
     protected $document = Document::class;
 
     // protected $document;
+
+    /**
+     * Create a new Eloquent model instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->bootIfNotBooted();
+
+        $this->initializeTraits();
+    }
+
+    /**
+     * Check if the model needs to be booted and if so, do it.
+     *
+     * @return void
+     */
+    protected function bootIfNotBooted()
+    {
+        if (! isset(static::$booted[static::class])) {
+            static::$booted[static::class] = true;
+
+            // $this->fireModelEvent('booting', false);
+
+            static::boot();
+
+            // $this->fireModelEvent('booted', false);
+        }
+    }
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        static::bootTraits();
+    }
+
+    /**
+     * Boot all of the bootable traits on the model.
+     *
+     * @return void
+     */
+    protected static function bootTraits()
+    {
+        $class = static::class;
+
+        $booted = [];
+
+        static::$traitInitializers[$class] = [];
+
+        foreach (class_uses_recursive($class) as $trait) {
+            $method = 'boot'.class_basename($trait);
+
+            if (method_exists($class, $method) && ! in_array($method, $booted)) {
+                forward_static_call([$class, $method]);
+
+                $booted[] = $method;
+            }
+
+            if (method_exists($class, $method = 'initialize'.class_basename($trait))) {
+                static::$traitInitializers[$class][] = $method;
+
+                static::$traitInitializers[$class] = array_unique(
+                    static::$traitInitializers[$class]
+                );
+            }
+        }
+    }
+
+    /**
+     * Initialize any initializable traits on the model.
+     *
+     * @return void
+     */
+    protected function initializeTraits()
+    {
+        foreach (static::$traitInitializers[static::class] as $method) {
+            $this->{$method}();
+        }
+    }
+
+    /**
+     * Clear the list of booted indices so they will be re-booted.
+     *
+     * @return void
+     */
+    public static function clearBootedIndices()
+    {
+        static::$booted = [];
+
+        static::$globalScopes = [];
+    }
 
     /**
      * Get the document class.
@@ -84,6 +188,16 @@ abstract class Index
         $this->document = $document;
 
         return $this;
+    }
+
+    /**
+     * Create new model instance.
+     *
+     * @return $this
+     */
+    public static function make()
+    {
+        return new static(...func_get_args());
     }
 
     /**
@@ -210,16 +324,6 @@ abstract class Index
     }
 
     /**
-     * Create new model instance.
-     *
-     * @return $this
-     */
-    public static function make()
-    {
-        return new static(...func_get_args());
-    }
-
-    /**
      * Begin querying the index.
      *
      * @return \Illuminate\Database\Eloquent\Builder
@@ -227,95 +331,6 @@ abstract class Index
     public static function query()
     {
         return (new static(...func_get_args()))->newQuery();
-    }
-
-    /**
-     * Check if whether index is exists.
-     *
-     * @param  string|null $index
-     * @return bool
-     */
-    protected function exists($index = null)
-    {
-        if (is_null(static::$exists)) {
-            static::$exists = $this->getConnection()
-                ->indices()
-                ->exists(['index' => $index ?: $this->getIndex()]);
-        }
-
-        return static::$exists;
-    }
-
-    /**
-     * Create the index.
-     *
-     * @param  string|null $index
-     * @return void
-     */
-    protected function create($index = null)
-    {
-        $this->getConnection()
-            ->indices()
-            ->create([
-                'index' => $index ?: $this->getIndex(),
-                'body' => array_filter($this->configuration()),
-            ]);
-    }
-
-    /**
-     * Delete the index.
-     *
-     * @param  string|null $index
-     * @return void
-     */
-    protected function delete($index = null)
-    {
-        $this->getConnection()
-            ->indices()
-            ->delete(['index' => $index ?: $this->getIndex()]);
-    }
-
-    /**
-     * Update index configuration.
-     *
-     * @param  array $config
-     * @param  string|null $index
-     * @return void
-     */
-    protected function update(array $config, $index = null)
-    {
-        $data = Arr::only($config, ['settings', 'mappings']);
-        $index = $index ?: $this->getIndex();
-
-        if (! empty($data['settings'])) {
-            $this->getConnection()->indices()->putSettings([
-                'index' => $index,
-                'body' => [
-                    'settings' => $data['settings'],
-                ],
-            ]);
-        }
-
-        if (! empty($data['mappings'])) {
-            $this->getConnection()->indices()->putMapping([
-                'index' => $index,
-                'type' => $this->getType(),
-                'body' => $data['mappings'],
-            ]);
-        }
-    }
-
-    /**
-     * Flush the index.
-     *
-     * @param  string|null $index
-     * @return void
-     */
-    protected function flush($index = null)
-    {
-        $this->getConnection()
-            ->indices()
-            ->flush(['index' => $index ?: $this->getIndex()]);
     }
 
     /**

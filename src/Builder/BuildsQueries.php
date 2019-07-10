@@ -1,6 +1,6 @@
 <?php
 
-namespace Jenky\Elastify\Concerns;
+namespace Jenky\Elastify\Builder;
 
 use Illuminate\Container\Container;
 use Jenky\Elastify\Collection;
