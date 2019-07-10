@@ -35,7 +35,7 @@ class Connection implements ConnectionInterface
      *
      * @param  string $index
      * @param  string|null $type
-     * @return mixed
+     * @return \Jenky\Elastify\Builder\Query
      */
     public function index($index, $type = null)
     {

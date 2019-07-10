@@ -200,7 +200,7 @@ abstract class Index
      *
      * @return array
      */
-    public function configuaration(): array
+    public function configuration(): array
     {
         return [
             'settings' => $this->settings(),
@@ -258,7 +258,7 @@ abstract class Index
             ->indices()
             ->create([
                 'index' => $index ?: $this->getIndex(),
-                'body' => array_filter($this->configuaration()),
+                'body' => array_filter($this->configuration()),
             ]);
     }
 
