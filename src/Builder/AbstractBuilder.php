@@ -74,4 +74,27 @@ abstract class AbstractBuilder
     {
         return $this->query->toArray();
     }
+
+    /**
+     * Dump the current DSL query.
+     *
+     * @return $this
+     */
+    public function dump()
+    {
+        dump($this->toDSL());
+
+        return $this;
+    }
+
+    /**
+     * Die and dump the current DSL query.
+     *
+     * @return void
+     */
+    public function dd()
+    {
+        dd($this->toDSL());
+    }
+
 }
