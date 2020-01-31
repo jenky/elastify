@@ -37,11 +37,14 @@
     "autoload": {
         "psr-4": {
             "Jenky\\Elastify\\": "src"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
-            "Jenky\\Elastify\\": "tests"
+            "Jenky\\Elastify\\Test\\": "tests"
         }
     },
     "scripts": {
