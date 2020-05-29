@@ -4,6 +4,7 @@ namespace Jenky\Elastify;
 
 use Closure;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Jenky\Elastify\Connection\HasConnection;
 

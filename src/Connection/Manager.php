@@ -54,10 +54,10 @@ class Manager implements ConnectionResolver
     /**
      * Get a database connection instance.
      *
-     * @param  string  $name
+     * @param  string|null  $name
      * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
-    public function connection($name = null): ConnectionInterface
+    public function connection(?string $name = null): ConnectionInterface
     {
         $name = $name ?: $this->getDefaultConnection();
 

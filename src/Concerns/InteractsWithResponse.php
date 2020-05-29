@@ -18,7 +18,7 @@ trait InteractsWithResponse
      *
      * @return int
      */
-    public function took()
+    public function took(): int
     {
         return $this->response['took'];
     }
@@ -28,7 +28,7 @@ trait InteractsWithResponse
      *
      * @return bool
      */
-    public function timedOut()
+    public function timedOut(): bool
     {
         return $this->response['timed_out'];
     }
@@ -38,7 +38,7 @@ trait InteractsWithResponse
      *
      * @return array
      */
-    public function shards()
+    public function shards(): array
     {
         return $this->response['_shards'];
     }
@@ -59,7 +59,7 @@ trait InteractsWithResponse
      *
      * @return int
      */
-    public function total()
+    public function total(): int
     {
         return $this->response['hits']['total'] ?? 0;
     }

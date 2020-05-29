@@ -9,6 +9,7 @@ use GuzzleHttp\Ring\Future\CompletedFutureArray;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
 use Jenky\Elastify\Contracts\ClientFactory;
+use Jenky\Elastify\Contracts\ConnectionInterface;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
@@ -59,7 +60,7 @@ class Factory implements ClientFactory
      * @param  array $config
      * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
-    public function make(array $config)
+    public function make(array $config): ConnectionInterface
     {
         return $this->createClient($config);
     }
@@ -70,7 +71,7 @@ class Factory implements ClientFactory
      * @param  array $config
      * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
-    protected function createClient(array $config)
+    protected function createClient(array $config): ConnectionInterface
     {
         $clientBuilder = ClientBuilder::create();
 
@@ -121,14 +122,12 @@ class Factory implements ClientFactory
                 $client->setLogger(tap(new Logger('elasticsearch'), function ($logger) use ($handler) {
                     $logger->pushHandler($handler);
                 }));
-
                 break;
 
             case 'logger':
                 $client->setLogger(
                     $this->container['log']->channel(Arr::get($config, 'channel'))
                 );
-
                 break;
 
             default:

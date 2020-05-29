@@ -9,21 +9,21 @@ interface ResponseInterface
      *
      * @return int
      */
-    public function took();
+    public function took(): int;
 
     /**
      * Get timed_out value.
      *
      * @return bool
      */
-    public function timedOut();
+    public function timedOut(): bool;
 
     /**
      * Get _shards value.
      *
      * @return array
      */
-    public function shards();
+    public function shards(): array;
 
     /**
      * Get "hits" values.
@@ -37,7 +37,7 @@ interface ResponseInterface
      *
      * @return int
      */
-    public function total();
+    public function total(): int;
 
     /**
      * Get the "aggregations" values.

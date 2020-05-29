@@ -1,8 +1,10 @@
 <?php
 
-namespace Jenky\Elastify;
+namespace Jenky\Elastify\Tests;
 
-class ExampleTest extends \PHPUnit\Framework\TestCase
+use Orchestra\Testbench\TestCase;
+
+class ExampleTest extends TestCase
 {
     /**
      * Test that true does in fact equal true.

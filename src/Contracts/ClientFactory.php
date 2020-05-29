@@ -2,8 +2,6 @@
 
 namespace Jenky\Elastify\Contracts;
 
-use Elasticsearch\Client;
-
 interface ClientFactory
 {
     /**
@@ -12,5 +10,5 @@ interface ClientFactory
      * @param  array $config
      * @return \Jenky\Elastify\Contracts\ConnectionInterface
      */
-    public function make(array $config);
+    public function make(array $config): ConnectionInterface;
 }
