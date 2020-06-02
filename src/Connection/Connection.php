@@ -63,7 +63,17 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * Handle dynamic method calls into the model.
+     * Get the elascticsearch client.
+     *
+     * @return \Elasticsearch\Client
+     */
+    public function getClient()
+    {
+        return $this->elastic;
+    }
+
+    /**
+     * Handle dynamic method calls into the client.
      *
      * @param  string  $method
      * @param  array  $parameters
@@ -71,6 +81,8 @@ class Connection implements ConnectionInterface
      */
     public function __call($method, $parameters)
     {
-        return $this->forwardCallTo($this->elastic, $method, $parameters);
+        return $this->forwardCallTo(
+            $this->getClient(), $method, $parameters
+        );
     }
 }

@@ -96,10 +96,22 @@ abstract class Index
 
             // $this->fireModelEvent('booting', false);
 
+            static::booting();
             static::boot();
+            static::booted();
 
             // $this->fireModelEvent('booted', false);
         }
+    }
+
+    /**
+     * Perform any actions required before the model boots.
+     *
+     * @return void
+     */
+    protected static function booting()
+    {
+        //
     }
 
     /**
@@ -154,6 +166,16 @@ abstract class Index
         foreach (static::$traitInitializers[static::class] as $method) {
             $this->{$method}();
         }
+    }
+
+    /**
+     * Perform any actions required after the model boots.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        //
     }
 
     /**
@@ -429,7 +451,7 @@ abstract class Index
     /**
      * Get a new query builder instance for the connection.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return \Jenky\Elastify\Builder\Query
      */
     protected function newBaseQueryBuilder()
     {
@@ -454,7 +476,7 @@ abstract class Index
             return static::$globalScopes[static::class][get_class($scope)] = $scope;
         }
 
-        throw new InvalidArgumentException('Global scope must be an instance of Closure or Scope.');
+        throw new \InvalidArgumentException('Global scope must be an instance of Closure or Scope.');
     }
 
     /**
