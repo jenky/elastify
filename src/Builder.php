@@ -3,6 +3,7 @@
 namespace Jenky\Elastify;
 
 use Closure;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Traits\Macroable;
 use Jenky\Elastify\Builder\Query;
@@ -184,11 +185,22 @@ class Builder
     /**
      * Get a base query builder instance.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return \Jenky\Elastify\Builder\Query
      */
     public function toBase()
     {
         return $this->applyScopes()->getQuery();
+    }
+
+    /**
+     * Determine if the given model has a scope.
+     *
+     * @param  string  $scope
+     * @return bool
+     */
+    public function hasNamedScope($scope)
+    {
+        return $this->index && $this->index->hasNamedScope($scope);
     }
 
     /**
@@ -201,7 +213,7 @@ class Builder
     {
         $builder = $this;
 
-        foreach ($scopes as $scope => $parameters) {
+        foreach (Arr::wrap($scopes) as $scope => $parameters) {
             // If the scope key is an integer, then the scope was passed as the value and
             // the parameter list is empty, so we will format the scope name and these
             // parameters here. Then, we'll be ready to call the scope on the model.
@@ -212,10 +224,7 @@ class Builder
             // Next we'll pass the scope callback to the callScope method which will take
             // care of grouping the "wheres" properly so the logical order doesn't get
             // messed up when adding scopes. Then we'll return back out the builder.
-            $builder = $builder->callScope(
-                [$this->model, 'scope'.ucfirst($scope)],
-                (array) $parameters
-            );
+            $builder = $builder->callNamedScope($scope, (array) $parameters);
         }
 
         return $builder;
@@ -239,7 +248,7 @@ class Builder
                 continue;
             }
 
-            $builder->callScope(function (Builder $builder) use ($scope) {
+            $builder->callScope(function (self $builder) use ($scope) {
                 // If the scope is a Closure we will just go ahead and call the scope with the
                 // builder instance. The "callScope" method will properly group the clauses
                 // that are added to this query so "where" clauses maintain proper logic.
@@ -251,7 +260,7 @@ class Builder
                 // passing in the builder and the model instance. After we run all of these
                 // scopes we will return back the builder instance to the outside caller.
                 if ($scope instanceof Scope) {
-                    $scope->apply($builder);
+                    $scope->apply($builder, $this->getIndex());
                 }
             });
         }
@@ -271,6 +280,20 @@ class Builder
         array_unshift($parameters, $this);
 
         return $scope(...array_values($parameters)) ?? $this;
+    }
+
+    /**
+     * Apply the given named scope on the current builder instance.
+     *
+     * @param  string  $scope
+     * @param  array  $parameters
+     * @return mixed
+     */
+    protected function callNamedScope($scope, array $parameters = [])
+    {
+        return $this->callScope(function (...$parameters) use ($scope) {
+            return $this->index->callNamedScope($scope, $parameters);
+        }, $parameters);
     }
 
     /**

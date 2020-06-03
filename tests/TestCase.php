@@ -8,6 +8,13 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 class TestCase extends BaseTestCase
 {
     /**
+     * The elasticsearch connection instance.
+     *
+     * @var \Jenky\Elastify\Contracts\ConnectionInterface
+     */
+    protected $elasticsearch;
+
+    /**
      * Get package providers.
      *
      * @param  \Illuminate\Foundation\Application  $app
@@ -18,6 +25,18 @@ class TestCase extends BaseTestCase
         return [
             ElastifyServiceProvider::class,
         ];
+    }
+
+    /**
+     * Setup the test environment.
+     *
+     * @return void
+     */
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $this->elasticsearch = elasticsearch();
     }
 
     /**

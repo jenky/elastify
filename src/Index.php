@@ -31,9 +31,10 @@ abstract class Index
     /**
      * The index type.
      *
+     * @deprecated 7.0 Deprecated in Elasticsearch 7.
      * @var string
      */
-    protected $type = '_doc';
+    protected $type;
 
     /**
      * The number of documents to return.
@@ -258,9 +259,9 @@ abstract class Index
      *
      * @return string
      */
-    public function getType(): string
+    public function getType(): ?string
     {
-        return $this->type ?: '_doc';
+        return $this->type;
     }
 
     /**
@@ -515,6 +516,29 @@ abstract class Index
     public function getGlobalScopes()
     {
         return Arr::get(static::$globalScopes, static::class, []);
+    }
+
+    /**
+     * Determine if the model has a given scope.
+     *
+     * @param  string  $scope
+     * @return bool
+     */
+    public function hasNamedScope($scope)
+    {
+        return method_exists($this, 'scope'.ucfirst($scope));
+    }
+
+    /**
+     * Apply the given named scope if possible.
+     *
+     * @param  string  $scope
+     * @param  array  $parameters
+     * @return mixed
+     */
+    public function callNamedScope($scope, array $parameters = [])
+    {
+        return $this->{'scope'.ucfirst($scope)}(...$parameters);
     }
 
     /**

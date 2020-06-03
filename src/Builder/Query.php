@@ -109,13 +109,23 @@ class Query extends AbstractBuilder
     }
 
     /**
+     * Get the elasticsearch indices instance.
+     *
+     * @return \Elasticsearch\Namespaces\IndicesNamespace
+     */
+    protected function indices()
+    {
+        return $this->getConnection()->indices();
+    }
+
+    /**
      * Check if whether indices/aliases with/without type are exists.
      *
      * @return bool
      */
     public function indexExists()
     {
-        return $this->getConnection()->indices()->exists(array_filter([
+        return $this->indices()->exists(array_filter([
             'index' => $this->from,
             'type' => $this->type,
         ]));
@@ -134,7 +144,7 @@ class Query extends AbstractBuilder
             'body' => $params,
         ];
 
-        return $this->getConnection()->indices()->create($data);
+        return $this->indices()->create($data);
     }
 
     /**
@@ -157,7 +167,7 @@ class Query extends AbstractBuilder
      */
     public function drop()
     {
-        return $this->getConnection()->indices()->delete([
+        return $this->indices()->delete([
             'index' => $this->from,
         ]);
     }
@@ -196,12 +206,10 @@ class Query extends AbstractBuilder
      */
     public function flush()
     {
-        return $this->getConnection()
-            ->indices()
-            ->flush(array_filter([
-                'index' => $this->from,
-                'type' => $this->type,
-            ]));
+        return $this->indices()->flush(array_filter([
+            'index' => $this->from,
+            'type' => $this->type,
+        ]));
     }
 
     /**

@@ -9,8 +9,6 @@ use Jenky\Elastify\Contracts\ConnectionInterface;
 
 class ConnectionTest extends TestCase
 {
-    protected $elasticsearch;
-
     /**
      * Define environment setup.
      *
@@ -31,13 +29,6 @@ class ConnectionTest extends TestCase
                 ],
             ]
         ]);
-    }
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $this->elasticsearch = elasticsearch();
     }
 
     public function test_connection_factory()
